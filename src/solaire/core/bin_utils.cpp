@@ -30,6 +30,14 @@ namespace solaire {
 			1,		9,		5,		13,		3,		11,		7,		15
 	};
 
+	/*!
+		\brief Copy a number of bits from one location to another.
+		\param aOut The first byte to write into.
+		\param aOutOffset The offset into the first byte to write into.
+		\param aIn The first byte to read from.
+		\param aInOffset The offset into the first byte to read from.
+		\param aBits The number of bits to read.
+	*/
 	void read_bits(void* const aOut, const uint32_t aOutOffset, const void* aIn, const uint32_t aInOffset, const uint32_t aBits) throw() {
 		const uint32_t outByte = aOutOffset / 8;
 		const uint32_t inByte = aOutOffset / 8;
@@ -66,39 +74,85 @@ namespace solaire {
 			}
 		}
 	}
-
+	
+	/*!
+		\brief Count the number of bits that are set.
+		\param aValue The value to count.
+		\return The number of set bits.
+	*/
 	constexpr uint32_t popcount(const uint8_t aValue) throw() {
 		return POPCOUNT[aValue & 15] + POPCOUNT[aValue >> 4];
 	}
-
+	
+	/*!
+		\brief Count the number of bits that are set.
+		\param aValue The value to count.
+		\return The number of set bits.
+	*/
 	constexpr uint32_t popcount(const uint16_t aValue) throw() {
 		return popcount(reinterpret_cast<const uint8_t*>(&aValue)[0]) + popcount(reinterpret_cast<const uint8_t*>(&aValue)[1]);
 	}
-
+	
+	/*!
+		\brief Count the number of bits that are set.
+		\param aValue The value to count.
+		\return The number of set bits.
+	*/
 	constexpr uint32_t popcount(const uint32_t aValue) throw() {
 		return popcount(reinterpret_cast<const uint16_t*>(&aValue)[0]) + popcount(reinterpret_cast<const uint16_t*>(&aValue)[1]);
 	}
-
+	
+	/*!
+		\brief Count the number of bits that are set.
+		\param aValue The value to count.
+		\return The number of set bits.
+	*/
 	constexpr uint32_t popcount(const uint64_t aValue) throw() {
 		return popcount(reinterpret_cast<const uint32_t*>(&aValue)[0]) + popcount(reinterpret_cast<const uint32_t*>(&aValue)[1]);
 	}
-
+	
+	/*!
+		\brief Count the number of bits that are set.
+		\param aValue The value to count.
+		\return The number of set bits.
+	*/
 	constexpr uint32_t popcount(const int8_t aValue) throw() {
 		return popcount(*reinterpret_cast<const uint8_t*>(&aValue));
 	}
-
+	
+	/*!
+		\brief Count the number of bits that are set.
+		\param aValue The value to count.
+		\return The number of set bits.
+	*/
 	constexpr uint32_t popcount(const int16_t aValue) throw() {
 		return popcount(*reinterpret_cast<const uint16_t*>(&aValue));
 	}
-
+	
+	/*!
+		\brief Count the number of bits that are set.
+		\param aValue The value to count.
+		\return The number of set bits.
+	*/
 	constexpr uint32_t popcount(const int32_t aValue) throw() {
 		return popcount(*reinterpret_cast<const uint32_t*>(&aValue));
 	}
-
+	
+	/*!
+		\brief Count the number of bits that are set.
+		\param aValue The value to count.
+		\return The number of set bits.
+	*/
 	constexpr uint32_t popcount(const int64_t aValue) throw() {
 		return popcount(*reinterpret_cast<const uint64_t*>(&aValue));
 	}
-
+	
+	/*!
+		\brief Count the number of bits that are set.
+		\param aPtr The first byte to count.
+		\param aBytes The number of bytes in aPtr.
+		\return The number of set bits.
+	*/
 	uint32_t popcount(const void* const aPtr, const uint32_t aBytes) throw() {
 		const uint8_t* i = static_cast<const uint8_t*>(aPtr);
 		uint32_t bytes = aBytes;
@@ -128,45 +182,91 @@ namespace solaire {
 
 		return ones;
 	}
-
+	
+	/*!
+		\brief Reverse the order of bits.
+		\param aValue The value to reflect.
+		\return The reflected value.
+	*/
 	constexpr uint8_t reflect(const uint8_t aValue) throw() {
 		return (REFLECT[aValue & 15] << 4) | REFLECT[aValue >> 4];
 	}
-
+	
+	/*!
+		\brief Reverse the order of bits.
+		\param aValue The value to reflect.
+		\return The reflected value.
+	*/
 	constexpr uint16_t reflect(const uint16_t aValue) throw() {
 		return
 			(static_cast<uint16_t>(reflect(reinterpret_cast<const uint8_t*>(&aValue)[0])) << 8)  | 
 			reflect(reinterpret_cast<const uint8_t*>(&aValue)[1]);
 	}
-
+	
+	/*!
+		\brief Reverse the order of bits.
+		\param aValue The value to reflect.
+		\return The reflected value.
+	*/
 	constexpr uint32_t reflect(const uint32_t aValue) throw() {
 		return
 			(static_cast<uint32_t>(reflect(reinterpret_cast<const uint16_t*>(&aValue)[0])) << 16) |
 			reflect(reinterpret_cast<const uint16_t*>(&aValue)[1]);
 	}
-
+	
+	/*!
+		\brief Reverse the order of bits.
+		\param aValue The value to reflect.
+		\return The reflected value.
+	*/
 	constexpr uint64_t reflect(const uint64_t aValue) throw() {
 		return
 			(static_cast<uint64_t>(reflect(reinterpret_cast<const uint32_t*>(&aValue)[0])) << 32L) |
 			reflect(reinterpret_cast<const uint32_t*>(&aValue)[1]);
 	}
-
+	
+	/*!
+		\brief Reverse the order of bits.
+		\param aValue The value to reflect.
+		\return The reflected value.
+	*/
 	constexpr int8_t reflect(const int8_t aValue) throw() {
 		return reflect(*reinterpret_cast<const uint8_t*>(&aValue));
 	}
-
+	
+	/*!
+		\brief Reverse the order of bits.
+		\param aValue The value to reflect.
+		\return The reflected value.
+	*/
 	constexpr int16_t reflect(const int16_t aValue) throw() {
 		return reflect(*reinterpret_cast<const uint16_t*>(&aValue));
 	}
-
+	
+	/*!
+		\brief Reverse the order of bits.
+		\param aValue The value to reflect.
+		\return The reflected value.
+	*/
 	constexpr int32_t reflect(const int32_t aValue) throw() {
 		return reflect(*reinterpret_cast<const uint32_t*>(&aValue));
 	}
-
+	
+	/*!
+		\brief Reverse the order of bits.
+		\param aValue The value to reflect.
+		\return The reflected value.
+	*/
 	constexpr int64_t reflect(const int64_t aValue) throw() {
 		return reflect(*reinterpret_cast<const uint64_t*>(&aValue));
 	}
 
+	/*!
+		\brief Reverse the order of bits.
+		\param aOut The destination of the reversed data.
+		\param aIn The source of the data.
+		\param aBytes The number of bytes in aIn.
+	*/
 	void reflect(void* const aOut, const void* const aIn, const uint32_t aBytes) throw() {
 		uint8_t* i = static_cast<uint8_t*>(aOut) + aBytes - 1;
 		const uint8_t* j = static_cast<const uint8_t*>(aIn);
