@@ -12,8 +12,8 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 
-#include "binary.hpp"
-#include "value.hpp"
+#include "solaire/serial/binary.hpp"
+#include "solaire/serial/value.hpp"
 
 namespace solaire { namespace serial {
 	enum {

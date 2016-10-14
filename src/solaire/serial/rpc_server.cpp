@@ -12,7 +12,7 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 
-#include "rpc_server.hpp"
+#include "solaire/serial/rpc_server.hpp"
 
 namespace solaire { namespace serial {
 	// rpc_server

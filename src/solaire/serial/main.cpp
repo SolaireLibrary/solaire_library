@@ -1,10 +1,10 @@
 #include <iostream>
 #include <fstream>
-#include "value.hpp"
-#include "binary.hpp"
-#include "value_to_parser.hpp"
-#include "encoder.hpp"
-#include "dispatcher.hpp"
+#include "solaire/serial/value.hpp"
+#include "solaire/serial/binary.hpp"
+#include "solaire/serial/value_to_parser.hpp"
+#include "solaire/serial/encoder.hpp"
+#include "solaire/serial/dispatcher.hpp"
 
 int main() {
 	{

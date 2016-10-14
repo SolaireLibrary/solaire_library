@@ -12,7 +12,7 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 
-#include "value_to_parser.hpp"
+#include "solaire/serial/value_to_parser.hpp"
 
 namespace solaire { namespace serial {
 	void value_to_parser(const value& aValue, value_parser& aParser) {
