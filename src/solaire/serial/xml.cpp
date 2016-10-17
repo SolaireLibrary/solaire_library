@@ -36,6 +36,18 @@ namespace solaire { namespace serial {
 		//! \todo Implement
 	}
 
+	void attribute_object(const element& aElement, value_parser& aParser) {
+		//! \todo Implement
+	}
+
+	void children_object(const element& aElement, value_parser& aParser) {
+		//! \todo Implement
+	}
+
+	void children_array(const element& aElement, value_parser& aParser) {
+		//! \todo Implement
+	}
+
 	void from_xml(const element& aElement, value_parser& aParser) {
 		if(aElement.body.empty()) {
 			if(aElement.children.empty()) {
@@ -44,8 +56,17 @@ namespace solaire { namespace serial {
 				if(aElement.attributes.size() == 1 && aElement.attributes[0].first == "value") {
 					primative_value(aElement.name, aElement.attributes[0].second, aParser);
 				}else {
-					//! \todo Object
-					//! \todo Array
+					if(aElement.attributes.empty()) {
+						const std::string& name = aElement.children[0].name;
+						if(name == "value" || name == "array" || name == "object") {
+							children_array(aElement, aParser);
+						}else {
+							children_object(aElement, aParser);
+						}
+					}else {
+						if(! aElement.children.empty()) throw std::runtime_error("solaire::serial::from_xml : Cannot decode element with attributes and children");
+						attribute_object(aElement, aParser);
+					}
 				}
 			}
 		}else {
