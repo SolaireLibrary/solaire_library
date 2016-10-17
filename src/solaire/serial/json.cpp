@@ -92,7 +92,26 @@ namespace solaire { namespace serial {
 	}
 	
 	void read_array(std::isteam& aStream, value_parser& aParser) {
-		//! \todo Implement
+		char c;
+		aStream >> c;
+		if(c != '[') std::runtime_error("solaire::serial::read_array : Invalid syntax for array value");
+		
+		aParser.begin_array();
+		while(true) {
+			// Skip whitespace
+			while(std::isspace(aStream.peak())) aStream >> c;
+			
+			// Determine if end of array or value
+			if(c == ']') {
+				break;
+			}else if(c == ',') {
+				continue;
+			}else {
+				// Parse value
+				from_json(aStream, aParser);
+			}
+		}
+		aParser.end_array();
 	}
 	
 	void read_object(std::isteam& aStream, value_parser& aParser) {
