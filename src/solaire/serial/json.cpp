@@ -64,7 +64,7 @@ namespace solaire { namespace serial {
 		//! \todo Support escape character
 		while(c != '"') {
 			buf += c;
-			aStream >> c;
+			aStream.read(&c, 1);
 		}
 		
 		//! \todo Check if memory address
@@ -119,9 +119,10 @@ namespace solaire { namespace serial {
 		char c;
 		aStream >> c;
 		if(c != '{') std::runtime_error("solaire::serial::read_object : Invalid syntax for object value");
-		
-		aParser.begin_array();
+
+		aParser.begin_object();
 		while(true) {
+			aStream >> c;
 			// Skip whitespace
 			while(isspace(aStream.peek())) aStream >> c;
 			
@@ -138,10 +139,17 @@ namespace solaire { namespace serial {
 				//! \todo Support escape character
 				while(c != '"') {
 					buf += c;
-					aStream >> c;
+					aStream.read(&c, 1);
 				}
 				aParser.name(buf.c_str());
-				
+
+				// Skip whitespace
+				while(isspace(aStream.peek())) aStream >> c;
+
+				// Read seperator
+				aStream >> c;
+				if (c != ':') std::runtime_error("solaire::serial::read_string : Invalid syntax for string value");
+
 				// Parse value
 				from_json(aStream, aParser);
 			}
