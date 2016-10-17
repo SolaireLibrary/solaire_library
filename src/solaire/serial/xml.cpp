@@ -32,62 +32,176 @@ namespace solaire { namespace serial {
 		return element();
 	}
 
-	void primative_value(const std::string& aName, const std::string& aValue, value_parser& aParser) {
+	void primative_value(const std::string& aValue, value_parser& aParser) {
 		//! \todo Implement
 	}
 
-	void from_xml(const element& aElement, value_parser& aParser) {
-		if(aElement.body.empty()) {
-			if(aElement.children.empty()) {
-				// No value
-				aParser.value_void();
-			}else {
-				if(aElement.attributes.size() == 1 && aElement.attributes[0].first == "value") {
-					// Attribute value
-					primative_value(aElement.name, aElement.attributes[0].second, aParser);
-				}else {
-					if(aElement.attributes.empty()) {
-						const std::string& name = aElement.children[0].name;
-						if(name == "value" || name == "array" || name == "object") {
-							// Children array
-							aParser.begin_array();
-							for(const element& i : aElement.children) from_xml(aElement, aParser);
-							aParser.end_array();
-						}else {
-							// Children object
-							aParser.begin_object();
-							for(const element& i : aElement.children) {
-								aParser.name(i.name.c_str());
-								from_xml(aElement, aParser);
-							}
-							aParser.end_object();
-						}
-					}else {
-						// Attribute / children object
-						aParser.begin_object();
-						for(const element::attribute& i : aElement.attributes) {
-							primative_value(i.first, i.second, aParser);
-						}
-						for(const element& i : aElement.children) {
-							aParser.name(i.name.c_str());
-							from_xml(aElement, aParser);
-						}
-						aParser.end_object();
-					}
-				}
-			}
-		}else {
-			if(aElement.children.empty()) {
-				// Body value
-				primative_value(aElement.name, aElement.body, aParser);
-			}else {
-				throw std::runtime_error("solaire::serial::from_xml : Cannot decode element with attributes and body");
-			}
-		}
+	inline void primative_value(const std::string& aName, const std::string& aValue, value_parser& aParser) {
+		aParser.name(aName.c_str());
+		primative_value(aValue, aParser);
+	}
+
+	inline void body_value(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		primative_value(aElement.name, aElement.body, aParser);
 	}
 	
-	void from_xml(std::istream& aStream, value_parser& aParser) {
-		from_xml(from_xml_tree(aStream), aParser);
+	inline void attribute_value(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		primative_value(aElement.attributes[0].second, aParser);
+	}
+
+	void attribute_object(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		aParser.begin_object();
+		for(const element::attribute& i : aElement.attributes) {
+			primative_value(i.first, i.second, aParser);
+		}
+		aParser.end_object();
+	}
+
+	void attribute_array(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		aParser.begin_array();
+		for(const element::attribute& i : aElement.attributes) {
+			primative_value(i.second, aParser);
+		}
+		aParser.begin_array();
+	}
+
+	void child_object(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		aParser.begin_object();
+		for(const element& i : aElement.children) {
+			aParser.name(i.name.c_str());
+			child_value(aElement, aParser, aConflictMode);
+		}
+		aParser.end_object();
+	}
+
+	void child_array(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		aParser.begin_array();
+		for(const element& i : aElement.children) {
+			child_value(aElement, aParser, aConflictMode);
+		}
+		aParser.begin_array();
+	}
+
+	void attribute_child_object(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		aParser.begin_object();
+		for(const element::attribute& i : aElement.attributes) {
+			primative_value(i.first, i.second, aParser);
+		}
+		for(const element& i : aElement.children) {
+			aParser.name(i.name.c_str());
+			child_value(aElement, aParser, aConflictMode);
+		}
+		aParser.end_object();
+	}
+
+	void attribute_child_array(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		aParser.begin_array();
+		for(const element::attribute& i : aElement.attributes) {
+			primative_value(i.second, aParser);
+		}
+		for(const element& i : aElement.children) {
+			child_value(aElement, aParser, aConflictMode);
+		}
+		aParser.begin_array();
+	}
+
+	void pure_attribute(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		//! \todo attribute value / attribute array / attribute object
+	}
+
+	void pure_children(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		//! \todo children value / children array / children object
+	}
+
+	void mixed_attribute_children(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		//! \todo attribute_children value / attribut_childrene array / attribute_children object
+	}
+
+	void child_value(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+
+		const bool body = ! aElement.body.empty();
+		const bool attributes = ! aElement.attributes.empty();
+		const bool children = ! aElement.children.empty();
+
+		if(attributes || children) {
+			if(body) {
+				switch(aConflictMode)
+				{
+				case XML_CONFLICT_IGNORE_BODY :
+					pure_attribute(aElement, aParser, aConflictMode);
+					break;
+				case XML_CONFLICT_IGNORE_ATTRIBUTES :
+					body_value(aElement, aParser, aConflictMode);
+					break;
+				default: // XML_CONFLICT_ERROR
+					throw std::runtime_error("solaire::serial::from_xml : Element with both body value and attributes (XML_CONFLICT_ERROR)");
+				}
+			}else {
+				if(attributes && ! children) {
+					pure_attribute(aElement, aParser, aConflictMode);
+				}else if (children && ! attributes) {
+					pure_children(aElement, aParser, aConflictMode);
+				}else {
+					mixed_attribute_children(aElement, aParser, aConflictMode);
+				}
+			}
+		}else if(body) {
+			body_value(aElement, aParser, aConflictMode);
+		}else {
+			aParser.value_void();
+		}
+
+		//if(aElement.body.empty()) {
+			//if(aElement.children.empty()) {
+				// No value
+				//aParser.value_void();
+			//}else {
+			//	if(aElement.attributes.size() == 1 && aElement.attributes[0].first == "value") {
+			//		// Attribute value
+			//		primative_value(aElement.name, aElement.attributes[0].second, aParser);
+			//	}else {
+			//		if(aElement.attributes.empty()) {
+			//			const std::string& name = aElement.children[0].name;
+			//			if(name == "value" || name == "array" || name == "object") {
+			//				// Children array
+			//				aParser.begin_array();
+			//				for(const element& i : aElement.children) child_value(aElement, aParser, aConflictMode);
+			//				aParser.end_array();
+			//			}else {
+			//				// Children object
+			//				aParser.begin_object();
+			//				for(const element& i : aElement.children) {
+			//					aParser.name(i.name.c_str());
+			//					child_value(aElement, aParser, aConflictMode);
+			//				}
+			//				aParser.end_object();
+			//			}
+			//		}else {
+			//			// Attribute / children object
+			//			aParser.begin_object();
+			//			for(const element::attribute& i : aElement.attributes) {
+			//				primative_value(i.first, i.second, aParser);
+			//			}
+			//			for(const element& i : aElement.children) {
+			//				aParser.name(i.name.c_str());
+			//				from_xml(aElement, aParser, aConflictMode);
+			//			}
+			//			aParser.end_object();
+			//		}
+			//	}
+			//}
+		//}else {
+			//if(aElement.children.empty()) {
+			//	// Body value
+			//	primative_value(aElement.name, aElement.body, aParser);
+			//}else {
+			
+			//}
+		//}
+	}
+	
+	void from_xml(std::istream& aStream, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		child_value(from_xml_tree(aStream), aParser, aConflictMode);
 	}
 	
 	// to_xml
