@@ -13,28 +13,29 @@
 //limitations under the License.
 
 #include <cstdio>
+#include <ctype.h>
 #include "solaire/serial/json.hpp"
 
 namespace solaire { namespace serial {
 	
-	void from_json(std::isteam& aStream, value_parser& aParser);
+	void from_json(std::istream& aStream, value_parser& aParser);
 	
-	void read_null(std::isteam& aStream, value_parser& aParser) {
+	void read_null(std::istream& aStream, value_parser& aParser) {
 		char tmp[4];
 		aStream.read(tmp, 4);
 		if(std::memcmp(tmp, "null", 4) != 0) throw std::runtime_error("solaire::serial::read_null : Invalid syntax for null value");
 		aParser.value_void();
 	}
 	
-	void read_bool(std::isteam& aStream, value_parser& aParser) {
+	void read_bool(std::istream& aStream, value_parser& aParser) {
 		char tmp[4];
 		aStream.read(tmp, 4);
 		if(std::memcmp(tmp, "true", 4) == 0) {
 			aParser.value_bool(true);
 			return;
-		}else std::memcmp(tmp, "fals", 4) == 0) {
+		}else if(std::memcmp(tmp, "fals", 4) == 0) {
 			aStream >> tmp[0];
-			if(tmp[0] == e) {
+			if(tmp[0] == 'e') {
 				aParser.value_bool(false);
 				return;
 			}
@@ -42,19 +43,19 @@ namespace solaire { namespace serial {
 		throw std::runtime_error("solaire::serial::read_bool : Invalid syntax for bool value");
 	}
 	
-	void read_number(std::isteam& aStream, value_parser& aParser) {
+	void read_number(std::istream& aStream, value_parser& aParser) {
 		char buf[32];
 		uint8_t length = 0;
-		const is_numerical_char = [](const char c){ return (c >= '0' && c <= '9') || c == '-' || c == '+' || c == 'E' || c == 'e' || c == '.'; }
+		const auto is_numerical_char = [](const char c){ return (c >= '0' && c <= '9') || c == '-' || c == '+' || c == 'E' || c == 'e' || c == '.'; };
 		//! \bug Buffer overflow on numbers with more than 31 characters.
-		while is_numerical_char(aStream.peak()) aStream >> buf[length++];
+		while(is_numerical_char(aStream.peek())) aStream >> buf[length++];
 		buf[length] = '\0';
 		double tmp;
 		sscanf(buf, "%lf", &tmp);
 		aParser.value_float(tmp);
 	}
 	
-	void read_string(std::isteam& aStream, value_parser& aParser) {
+	void read_string(std::istream& aStream, value_parser& aParser) {
 		std::string buf;
 		char c;
 		aStream >> c;
@@ -81,17 +82,17 @@ namespace solaire { namespace serial {
 				// Parse address
 				//! \todo Implement correctly for 32 / 64 bit architectures
 				uint64_t tmp;
-				sscanf(buf + 1, "?", &tmp);
+				sscanf(buf.c_str() + 1, "?", &tmp);
 				aParser.value_pointer(*reinterpret_cast<void**>(&tmp));
 				return;
 			}
 		}
 		
 		// Parse string
-		aParser.value_string(buf);
+		aParser.value_string(buf.c_str());
 	}
 	
-	void read_array(std::isteam& aStream, value_parser& aParser) {
+	void read_array(std::istream& aStream, value_parser& aParser) {
 		char c;
 		aStream >> c;
 		if(c != '[') std::runtime_error("solaire::serial::read_array : Invalid syntax for array value");
@@ -99,7 +100,7 @@ namespace solaire { namespace serial {
 		aParser.begin_array();
 		while(true) {
 			// Skip whitespace
-			while(std::isspace(aStream.peak())) aStream >> c;
+			while(isspace(aStream.peek())) aStream >> c;
 			
 			// Determine if end of array or value
 			if(c == ']') {
@@ -114,7 +115,7 @@ namespace solaire { namespace serial {
 		aParser.end_array();
 	}
 	
-	void read_object(std::isteam& aStream, value_parser& aParser) {
+	void read_object(std::istream& aStream, value_parser& aParser) {
 		char c;
 		aStream >> c;
 		if(c != '{') std::runtime_error("solaire::serial::read_object : Invalid syntax for object value");
@@ -122,7 +123,7 @@ namespace solaire { namespace serial {
 		aParser.begin_array();
 		while(true) {
 			// Skip whitespace
-			while(std::isspace(aStream.peak())) aStream >> c;
+			while(isspace(aStream.peek())) aStream >> c;
 			
 			// Determine if end of array or value
 			if(c == '}') {
@@ -148,13 +149,13 @@ namespace solaire { namespace serial {
 		aParser.end_object();
 	}
 	
-	void from_json(std::isteam& aStream, value_parser& aParser) {
+	void from_json(std::istream& aStream, value_parser& aParser) {
 		// Skip whitespace
 		char c;
-		while(std::isspace(aStream.peak())) aStream >> c;
+		while(isspace(aStream.peek())) aStream >> c;
 		
 		// Determine value type
-		switch(aStream.peak()) {
+		switch(aStream.peek()) {
 		case 'n' :
 			read_null(aStream, aParser);
 			break;
@@ -209,7 +210,7 @@ namespace solaire { namespace serial {
 	
 	void to_json::end_array() {
 		const state tmp = mStateStack.back();
-		if(tmp.is_array) throw std::runtime_error("solaire::serial::to_json::end_array : Current value is not an array");
+		if(! tmp.is_array) throw std::runtime_error("solaire::serial::to_json::end_array : Current value is not an array");
 		mStateStack.pop_back();
 		mStream << ']';
 	}
@@ -220,6 +221,7 @@ namespace solaire { namespace serial {
 			if(tmp.size++ > 0 && tmp.is_array) mStream << ',';
 		}
 		mStream << '{';
+		state tmp;
 		tmp.is_object = 1;
 		tmp.size = 0;
 		mStateStack.push_back(tmp);
@@ -227,7 +229,7 @@ namespace solaire { namespace serial {
 	
 	void to_json::end_object() {
 		const state tmp = mStateStack.back();
-		if(tmp.is_object) throw std::runtime_error("solaire::serial::to_json::end_object : Current value is not an object");
+		if(! tmp.is_object) throw std::runtime_error("solaire::serial::to_json::end_object : Current value is not an object");
 		mStateStack.pop_back();
 		mStream << '}';
 	}
@@ -288,5 +290,3 @@ namespace solaire { namespace serial {
 	}
 	
 }}
-
-#endif

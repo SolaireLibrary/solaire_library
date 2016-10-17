@@ -15,6 +15,7 @@
 #ifndef SOLAIRE_SERIALISE_JSON_HPP
 #define SOLAIRE_SERIALISE_JSON_HPP
 
+#include <vector>
 #include <iostream>
 #include "value_parser.hpp"
 
@@ -46,7 +47,7 @@ namespace solaire { namespace serial {
 		void value_string(const char* const) override;
 	};
 	
-	void from_json(std::isteam&, value_parser&);
+	void from_json(std::istream&, value_parser&);
 }}
 
 #endif
