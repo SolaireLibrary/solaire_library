@@ -67,41 +67,41 @@ namespace solaire { namespace serial {
 		aParser.begin_array();
 	}
 
-	void child_object(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+	void child_object(element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
 		aParser.begin_object();
-		for(const element& i : aElement.children) {
+		for(element& i : aElement.children) {
 			aParser.name(i.name.c_str());
 			child_value(aElement, aParser, aConflictMode);
 		}
 		aParser.end_object();
 	}
 
-	void child_array(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+	void child_array(element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
 		aParser.begin_array();
-		for(const element& i : aElement.children) {
+		for(element& i : aElement.children) {
 			child_value(aElement, aParser, aConflictMode);
 		}
 		aParser.begin_array();
 	}
 
-	void attribute_child_object(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+	void attribute_child_object(element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
 		aParser.begin_object();
 		for(const element::attribute& i : aElement.attributes) {
 			primative_value(i.first, i.second, aParser);
 		}
-		for(const element& i : aElement.children) {
+		for(element& i : aElement.children) {
 			aParser.name(i.name.c_str());
 			child_value(aElement, aParser, aConflictMode);
 		}
 		aParser.end_object();
 	}
 
-	void attribute_child_array(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+	void attribute_child_array(element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
 		aParser.begin_array();
 		for(const element::attribute& i : aElement.attributes) {
 			primative_value(i.second, aParser);
 		}
-		for(const element& i : aElement.children) {
+		for(element& i : aElement.children) {
 			child_value(aElement, aParser, aConflictMode);
 		}
 		aParser.begin_array();
@@ -122,61 +122,51 @@ namespace solaire { namespace serial {
 
 	bool is_object_array(const element& aElement) {
 		for(const element& i : aElement.children) {
-			if(i.name == "value") continue;
-			else if(i.name == "array") continue;
-			else if(i.name == "object") continue;
+			if(i.name == "SOLAIRE_XML_VALUE") continue;
+			else if(i.name == "SOLAIRE_XML_ARRAY") continue;
+			else if(i.name == "SOLAIRE_XML_OBJECT") continue;
 			else return false;
 		}
 		return true;
 	}
 
-	void pure_attribute(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
-		if(aElement.attributes.size() == 1 && aElement.attributes[0].first == "value") primative_value(aElement.attributes[0].second, aParser);
+	void pure_attribute(element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+		if(aElement.attributes.size() == 1 && aElement.attributes[0].first == "SOLAIRE_XML_VALUE") primative_value(aElement.attributes[0].second, aParser);
 		else if(is_attribute_array(aElement)) attribute_array(aElement, aParser, aConflictMode);
 		else attribute_object(aElement, aParser, aConflictMode);
 	}
 
-	void pure_children(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+	void pure_children(element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
 		if(aElement.children.size() == 1) child_value(aElement.children[0], aParser, aConflictMode);
 		else if(is_object_array(aElement)) child_array(aElement, aParser, aConflictMode);
 		else child_object(aElement, aParser, aConflictMode);
 	}
 
-	void mixed_attribute_children(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+	void mixed_attribute_children(element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
 		const bool aa = is_attribute_array(aElement);
 		const bool oa = is_object_array(aElement);
 		if(aa && oa) attribute_child_array(aElement, aParser, aConflictMode);
-		else if(aa && ! oa) throw std::runtime_error("solaire::serial::from_xml : Attribute array / Child object");
-		else if (oa && !aa) throw std::runtime_error("solaire::serial::from_xml : Attribute object / Child array");
 		else attribute_child_object(aElement, aParser, aConflictMode);
 	}
 
-	void child_value(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
-		const bool body = ! aElement.body.empty();
-		const bool attributes = ! aElement.attributes.empty();
+	void child_value(element& aElement, value_parser& aParser) {
+		bool body = ! aElement.body.empty();
+		bool attributes = ! aElement.attributes.empty();
 		const bool children = ! aElement.children.empty();
 
 		if(attributes || children) {
 			if(body) {
-				switch(aConflictMode)
-				{
-				case XML_CONFLICT_IGNORE_BODY :
-					pure_attribute(aElement, aParser, aConflictMode);
-					break;
-				case XML_CONFLICT_IGNORE_ATTRIBUTES :
-					body_value(aElement, aParser, aConflictMode);
-					break;
-				default: // XML_CONFLICT_ERROR
-					throw std::runtime_error("solaire::serial::from_xml : Element with both body value and attributes (XML_CONFLICT_ERROR)");
-				}
+				aElement.attributes.push_back({ "SOLAIRE_XML_BODY", aElement.body });
+				aElement.body.clear();
+				attributes = true;
+				body = false;
+			}
+			if(attributes && ! children) {
+				pure_attribute(aElement, aParser, aConflictMode);
+			}else if (children && ! attributes) {
+				pure_children(aElement, aParser, aConflictMode);
 			}else {
-				if(attributes && ! children) {
-					pure_attribute(aElement, aParser, aConflictMode);
-				}else if (children && ! attributes) {
-					pure_children(aElement, aParser, aConflictMode);
-				}else {
-					mixed_attribute_children(aElement, aParser, aConflictMode);
-				}
+				mixed_attribute_children(aElement, aParser, aConflictMode);
 			}
 		}else if(body) {
 			body_value(aElement, aParser, aConflictMode);
@@ -185,7 +175,7 @@ namespace solaire { namespace serial {
 		}
 	}
 	
-	void from_xml(std::istream& aStream, value_parser& aParser, const xml_conflict_mode aConflictMode) {
+	void from_xml(std::istream& aStream, value_parser& aParser) {
 		child_value(from_xml_tree(aStream), aParser, aConflictMode);
 	}
 	
@@ -200,12 +190,12 @@ namespace solaire { namespace serial {
 	void to_xml::write_value(const char* const aValue) {
 		state& tmp = mStateStack.back();
 		++tmp.size;
-		if(tmp.is_array) mName = "value";
-		mStream << '<' << mName.c_str() << " value=\"" << aValue << "\"/>";
+		if(tmp.is_array) mName = "SOLAIRE_XML_VALUE";
+		mStream << '<' << mName.c_str() << " SOLAIRE_XML_VALUE=\"" << aValue << "\"/>";
 	}
 	
 	void to_xml::begin_array() {
-		if(mStateStack.empty() || mStateStack.back().is_array) mName = "array";
+		if(mStateStack.empty() || mStateStack.back().is_array) mName = "SOLAIRE_XML_ARRAY";
 		state tmp;
 		tmp.size = 0;
 		tmp.is_object = 1;
@@ -216,12 +206,12 @@ namespace solaire { namespace serial {
 	void to_xml::end_array() {
 		const state tmp = mStateStack.back();
 		mStateStack.pop_back();
-		if (tmp.is_object) mName = "array";
+		if (tmp.is_object) mName = "SOLAIRE_XML_ARRAY";
 		mStream << '</' << mName.c_str() << '>';
 	}
 	
 	void to_xml::begin_object() {
-		if(mStateStack.empty() || mStateStack.back().is_array) mName = "object";
+		if(mStateStack.empty() || mStateStack.back().is_array) mName = "SOLAIRE_XML_OBJECT";
 		state tmp;
 		tmp.size = 0;
 		tmp.is_object = 1;
@@ -232,7 +222,7 @@ namespace solaire { namespace serial {
 	void to_xml::end_object() {
 		const state tmp = mStateStack.back();
 		mStateStack.pop_back();
-		if(tmp.is_object) mName = "object";
+		if(tmp.is_object) mName = "SOLAIRE_XML_OBJECT";
 		mStream << '<' << '/' << mName.c_str() << '>';
 		//! \todo Write primative members as attributes
 	}
