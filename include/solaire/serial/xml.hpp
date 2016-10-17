@@ -49,8 +49,14 @@ namespace solaire { namespace serial {
 		void value_pointer(void* const) override;
 		void value_string(const char* const) override;
 	};
-	
-	void from_xml(std::istream&, value_parser&);
+
+	enum xml_conflict_mode : uint8_t {
+		XML_CONFLICT_IGNORE_BODY,
+		XML_CONFLICT_IGNORE_ATTRIBUTES,
+		XML_CONFLICT_ERROR
+	};
+
+	void from_xml(std::istream&, value_parser&, const xml_conflict_mode aConflictMode = XML_CONFLICT_ERROR);
 }}
 
 #endif
