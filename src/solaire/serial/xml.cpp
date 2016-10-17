@@ -108,8 +108,16 @@ namespace solaire { namespace serial {
 	}
 
 	bool is_attribute_array(const element& aElement) {
-		//! \todo implement
-		return false;
+		uint32_t i = 0;
+		char buf[32];
+		for(const element::attribute& j : aElement.attributes) {
+			for(const char c : j.first) if (c < '0' || c >= '9') return false;
+			uint64_t tmp;
+			sscanf(buf, "%llu", &tmp);
+			if(tmp != i) return false;
+			++i;
+		}
+		return true;
 	}
 
 	bool is_object_array(const element& aElement) {
