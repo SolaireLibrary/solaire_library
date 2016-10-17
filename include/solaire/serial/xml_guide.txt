@@ -1,0 +1,77 @@
+Source in XML :
+<SOLAIRE_XML_ARRAY>
+	<SOLAIRE_XML_VALUE>first</SOLAIRE_XML_VALUE>
+	<SOLAIRE_XML_VALUE>second</SOLAIRE_XML_VALUE>
+	<SOLAIRE_XML_VALUE>third</SOLAIRE_XML_VALUE>
+	<SOLAIRE_XML_VALUE>fourth</SOLAIRE_XML_VALUE>
+</SOLAIRE_XML_ARRAY>
+
+Output in JSON:
+["first", "second", "third", "fourth"]
+
+////
+
+Source in XML :
+<SOLAIRE_XML_OBJECT>
+	<first>first value</first>
+	<second>second value</second>
+	<third>third value</third>
+	<fourth>fourth value</fourth>
+</SOLAIRE_XML_OBJECT>
+
+Output in JSON:
+{
+	"first" : "first value", 
+	"second" : "second value", 
+	"third" : "third value", 
+	"fourth" : "fourth value"
+}
+
+////
+
+Source in XML :
+<SOLAIRE_XML_OBJECT first="first value" second="second value" third="third value" fourth="fourth value"/>
+
+Output in JSON:
+{
+	"first" : "first value", 
+	"second" : "second value", 
+	"third" : "third value", 
+	"fourth" : "fourth value"
+}
+
+////
+
+Source in XML :
+<SOLAIRE_XML_ARRAY 0="first" 1="second" 2="third" 3="fourth"/>
+
+Output in JSON:
+["first", "second", "third", "fourth"]
+
+////
+
+Source in XML :
+<SOLAIRE_XML_OBJECT first="first value" second="second value" third="third value" fourth="fourth value">my body</SOLAIRE_XML_OBJECT>
+
+Output in JSON:
+{
+	"first" : "first value", 
+	"second" : "second value", 
+	"third" : "third value", 
+	"fourth" : "fourth value",
+	"SOLAIRE_XML_BODY" : "my body"
+}
+
+////
+
+Source in XML :
+<SOLAIRE_XML_ARRAY 0="first" 1="second" 2="third" 3="fourth">my body</SOLAIRE_XML_ARRAY>
+
+Output in JSON:
+{
+	"0" : "first", 
+	"1" : "second", 
+	"2" : "third", 
+	"3" : "fourth",
+	"SOLAIRE_XML_BODY" : "my body"
+}
