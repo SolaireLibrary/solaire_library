@@ -12,6 +12,7 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 
+#include <cstdio>
 #include "solaire/serial/json.hpp"
 
 namespace solaire { namespace serial {
@@ -19,20 +20,75 @@ namespace solaire { namespace serial {
 	void from_json(std::isteam& aStream, value_parser& aParser);
 	
 	void read_null(std::isteam& aStream, value_parser& aParser) {
-		//! \todo Implement
+		char tmp[4];
+		aStream.read(tmp, 4);
+		if(std::memcmp(tmp, "null", 4) != 0) throw std::runtime_error("solaire::serial::read_null : Invalid syntax for null value");
+		aParser.value_void();
 	}
 	
 	void read_bool(std::isteam& aStream, value_parser& aParser) {
-		//! \todo Implement
+		char tmp[4];
+		aStream.read(tmp, 4);
+		if(std::memcmp(tmp, "true", 4) == 0) {
+			aParser.value_bool(true);
+			return;
+		}else std::memcmp(tmp, "fals", 4) == 0) {
+			aStream >> tmp[0];
+			if(tmp[0] == e) {
+				aParser.value_bool(false);
+				return;
+			}
+		}
+		throw std::runtime_error("solaire::serial::read_bool : Invalid syntax for bool value");
 	}
 	
 	void read_number(std::isteam& aStream, value_parser& aParser) {
-		//! \todo Implement
+		char buf[32];
+		uint8_t length = 0;
+		const is_numerical_char = [](const char c){ return (c >= '0' && c <= '9') || c == '-' || c == '+' || c == 'E' || c == 'e' || c == '.'; }
+		//! \bug Buffer overflow on numbers with more than 31 characters.
+		while is_numerical_char(aStream.peak()) aStream >> buf[length++];
+		buf[length] = '\0';
+		double tmp;
+		sscanf(buf, "%lf", &tmp);
+		aParser.value_float(tmp);
 	}
 	
 	void read_string(std::isteam& aStream, value_parser& aParser) {
+		std::string buf;
+		char c;
+		aStream >> c;
+		if(c != '"') std::runtime_error("solaire::serial::read_string : Invalid syntax for string value");
+		aStream >> c;
+		//! \todo Support escape character
+		while(c != '"') {
+			buf += c;
+			aStream >> c;
+		}
+		
 		//! \todo Check if memory address
-		//! \todo Implement
+		if(buf[0] == '#') {
+			bool is_address = true;
+			const size_t size = buf.size();
+			for(size_t i = 1; i < size; ++i) {
+				if(buf[i] < '0' || buf[i] > '9') {
+					is_address = false;
+					break;
+				}
+			}
+		
+			if(is_address) {
+				// Parse address
+				//! \todo Implement correctly for 32 / 64 bit architectures
+				uint64_t tmp;
+				sscanf(buf + 1, "?", &tmp);
+				aParser.value_pointer(*reinterpret_cast<void**>(&tmp));
+				return;
+			}
+		}
+		
+		// Parse string
+		aParser.value_string(buf);
 	}
 	
 	void read_array(std::isteam& aStream, value_parser& aParser) {
