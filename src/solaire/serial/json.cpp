@@ -16,8 +16,72 @@
 
 namespace solaire { namespace serial {
 	
-	void from_json(std::isteam&, value_parser&) {
+	void from_json(std::isteam& aStream, value_parser& aParser);
+	
+	void read_null(std::isteam& aStream, value_parser& aParser) {
 		//! \todo Implement
+	}
+	
+	void read_bool(std::isteam& aStream, value_parser& aParser) {
+		//! \todo Implement
+	}
+	
+	void read_number(std::isteam& aStream, value_parser& aParser) {
+		//! \todo Implement
+	}
+	
+	void read_string(std::isteam& aStream, value_parser& aParser) {
+		//! \todo Check if memory address
+		//! \todo Implement
+	}
+	
+	void read_array(std::isteam& aStream, value_parser& aParser) {
+		//! \todo Implement
+	}
+	
+	void read_object(std::isteam& aStream, value_parser& aParser) {
+		//! \todo Implement
+	}
+	
+	void from_json(std::isteam& aStream, value_parser& aParser) {
+		// Skip whitespace
+		char c;
+		while(std::isspace(aStream.peak())) aStream >> c;
+		
+		// Determine value type
+		switch(aStream.peak()) {
+		case 'n' :
+			read_null(aStream, aParser);
+			break;
+		case 't' :
+		case 'f' :
+			read_bool(aStream, aParser);
+			break;
+		case '-' :
+		case '0' :
+		case '1' :
+		case '2' :
+		case '3' :
+		case '4' :
+		case '5' :
+		case '6' :
+		case '7' :
+		case '8' :
+		case '9' :
+			read_number(aStream, aParser);
+			break;
+		case '"' :
+			read_string(aStream, aParser);
+			break;
+		case '[' :
+			read_array(aStream, aParser);
+			break;
+		case '{' :
+			read_object(aStream, aParser);
+			break;
+		default:
+			throw std::runtime_error("solaire::serial::from_json : Unexpected character found");
+		}
 	}
 	
 	// to_json
