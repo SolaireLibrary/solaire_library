@@ -27,10 +27,11 @@ namespace solaire { namespace serial {
 			uint16_t is_object : 1;
 			uint16_t size : 14;
 		};
+		std::string mName;
 		std::vector<state> mStateStack;
 		std::ostream& mStream;
 
-		void write_value(const std::string&);
+		void write_value(const char* const);
 	public:
 		to_xml(std::ostream&);
 		// Inherited from value_parser

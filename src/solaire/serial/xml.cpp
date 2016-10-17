@@ -23,72 +23,101 @@ namespace solaire { namespace serial {
 	}
 	
 	// to_xml
+
+	//! \todo Add header element
 	
 	to_xml::to_xml(std::ostream& aStream) :
 		mStream(aStream)
 	{}
 
-	void to_xml::write_value(const std::string& aValue) {
-		const state tmp = mStateStack.back();
+	void to_xml::write_value(const char* const aValue) {
+		state& tmp = mStateStack.back();
+		++tmp.size;
 		if(tmp.is_array) {
-
+			mStream << "<value>" << aValue << "</value>";
 		}else if(tmp.is_object) {
-			
+			mStream << '<' << mName.c_str() << '>' << aValue << '<' << '/' << mName.c_str() << '>';
 		}else {
-			
+			throw std::runtime_error("solaire::serial::to_xml::write_value : Cannot write value without array or object container");
 		}
 	}
 	
 	void to_xml::begin_array() {
-		//! \todo Implement
+		if(mStateStack.empty() || mStateStack.back().is_array) mName = "array";
+		state tmp;
+		tmp.size = 0;
+		tmp.is_object = 1;
+		mStateStack.push_back(tmp);
+		mStream << '<' << mName.c_str() << '>';
 	}
 	
 	void to_xml::end_array() {
-		//! \todo Implement
+		const state tmp = mStateStack.back();
+		mStateStack.pop_back();
+		if (tmp.is_object) mName = "array";
+		mStream << '</' << mName.c_str() << '>';
 	}
 	
 	void to_xml::begin_object() {
-		//! \todo Implement
+		if(mStateStack.empty() || mStateStack.back().is_array) mName = "object";
+		state tmp;
+		tmp.size = 0;
+		tmp.is_object = 1;
+		mStateStack.push_back(tmp);
+		mStream << '<' << mName.c_str() << '>';
 	}
 	
 	void to_xml::end_object() {
-		//! \todo Implement
+		const state tmp = mStateStack.back();
+		mStateStack.pop_back();
+		if(tmp.is_object) mName = "object";
+		mStream << '<' << '/' << mName.c_str() << '>';
 	}
 	
 	void to_xml::name(const char* aName) {
-		//! \todo Implement
+		mName = aName;
 	}
 	
 	void to_xml::value_void() {
-		//! \todo Implement
+		write_value("void");
 	}
 	
 	void to_xml::value_bool(const bool aValue) {
-		//! \todo Implement
+		write_value(aValue ? "true" : "false");
 	}
 	
 	void to_xml::value_char(const char aValue) {
-		//! \todo Implement
+		const char tmp[2] = { aValue, '\0' };
+		write_value(tmp);
 	}
 	
 	void to_xml::value_unsigned(const uint64_t aValue) {
-		//! \todo Implement
+		char buffer[32];
+		snprintf(buffer, 32, "%llu", aValue);
+		write_value(buffer);
 	}
 	
 	void to_xml::value_signed(const int64_t aValue) {
-		//! \todo Implement
+		char buffer[32];
+		snprintf(buffer, 32, "%lli", aValue);
+		write_value(buffer);
 	}
 	
 	void to_xml::value_float(const double aValue) {
-		//! \todo Implement
+		char buffer[32];
+		snprintf(buffer, 32, "%lf", aValue);
+		write_value(buffer);
 	}
 	
 	void to_xml::value_pointer(void* const aValue) {
-		//! \todo Implement
+		char buffer[32];
+		buffer[0] = '#';
+		snprintf(buffer + 1, 31, "%llu", *reinterpret_cast<uint64_t* const*>(&aValue));
+		write_value(buffer);
 	}
 	
 	void to_xml::value_string(const char* const aValue) {
-		//! \todo Implement
+		write_value(aValue);
 	}
 	
 }}
