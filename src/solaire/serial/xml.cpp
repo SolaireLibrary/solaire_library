@@ -33,13 +33,8 @@ namespace solaire { namespace serial {
 	void to_xml::write_value(const char* const aValue) {
 		state& tmp = mStateStack.back();
 		++tmp.size;
-		if(tmp.is_array) {
-			mStream << "<value>" << aValue << "</value>";
-		}else if(tmp.is_object) {
-			mStream << '<' << mName.c_str() << '>' << aValue << '<' << '/' << mName.c_str() << '>';
-		}else {
-			throw std::runtime_error("solaire::serial::to_xml::write_value : Cannot write value without array or object container");
-		}
+		if(tmp.is_array) mName = "value";
+		mStream << '<' << mName.c_str() << " value=\"" << aValue << "\"/>";
 	}
 	
 	void to_xml::begin_array() {
