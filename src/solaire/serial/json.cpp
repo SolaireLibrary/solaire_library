@@ -115,7 +115,37 @@ namespace solaire { namespace serial {
 	}
 	
 	void read_object(std::isteam& aStream, value_parser& aParser) {
-		//! \todo Implement
+		char c;
+		aStream >> c;
+		if(c != '{') std::runtime_error("solaire::serial::read_object : Invalid syntax for object value");
+		
+		aParser.begin_array();
+		while(true) {
+			// Skip whitespace
+			while(std::isspace(aStream.peak())) aStream >> c;
+			
+			// Determine if end of array or value
+			if(c == '}') {
+				break;
+			}else if(c == ',') {
+				continue;
+			}else {
+				// Read name
+				if(c != '"') std::runtime_error("solaire::serial::read_string : Invalid syntax for string value");
+				std::string buf;
+				aStream >> c;
+				//! \todo Support escape character
+				while(c != '"') {
+					buf += c;
+					aStream >> c;
+				}
+				aParser.name(buf.c_str());
+				
+				// Parse value
+				from_json(aStream, aParser);
+			}
+		}
+		aParser.end_object();
 	}
 	
 	void from_json(std::isteam& aStream, value_parser& aParser) {
