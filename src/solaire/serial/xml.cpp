@@ -150,54 +150,6 @@ namespace solaire { namespace serial {
 		}else {
 			aParser.value_void();
 		}
-
-		//if(aElement.body.empty()) {
-			//if(aElement.children.empty()) {
-				// No value
-				//aParser.value_void();
-			//}else {
-			//	if(aElement.attributes.size() == 1 && aElement.attributes[0].first == "value") {
-			//		// Attribute value
-			//		primative_value(aElement.name, aElement.attributes[0].second, aParser);
-			//	}else {
-			//		if(aElement.attributes.empty()) {
-			//			const std::string& name = aElement.children[0].name;
-			//			if(name == "value" || name == "array" || name == "object") {
-			//				// Children array
-			//				aParser.begin_array();
-			//				for(const element& i : aElement.children) child_value(aElement, aParser, aConflictMode);
-			//				aParser.end_array();
-			//			}else {
-			//				// Children object
-			//				aParser.begin_object();
-			//				for(const element& i : aElement.children) {
-			//					aParser.name(i.name.c_str());
-			//					child_value(aElement, aParser, aConflictMode);
-			//				}
-			//				aParser.end_object();
-			//			}
-			//		}else {
-			//			// Attribute / children object
-			//			aParser.begin_object();
-			//			for(const element::attribute& i : aElement.attributes) {
-			//				primative_value(i.first, i.second, aParser);
-			//			}
-			//			for(const element& i : aElement.children) {
-			//				aParser.name(i.name.c_str());
-			//				from_xml(aElement, aParser, aConflictMode);
-			//			}
-			//			aParser.end_object();
-			//		}
-			//	}
-			//}
-		//}else {
-			//if(aElement.children.empty()) {
-			//	// Body value
-			//	primative_value(aElement.name, aElement.body, aParser);
-			//}else {
-			
-			//}
-		//}
 	}
 	
 	void from_xml(std::istream& aStream, value_parser& aParser, const xml_conflict_mode aConflictMode) {
