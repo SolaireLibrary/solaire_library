@@ -17,9 +17,48 @@
 #include "solaire/serial/xml.hpp"
 
 namespace solaire { namespace serial {
+
+	struct element {
+		typedef std::pair<std::string, std::string> attribute;
+
+		std::vector<attribute> attributes;
+		std::vector<element> children;
+		std::string body;
+		std::string name;
+	};
+
+	element from_xml_tree(std::istream& aStream) {
+		//! \todo Implement
+		return element();
+	}
+
+	void primative_value(const std::string& aName, const std::string& aValue, value_parser& aParser) {
+		//! \todo Implement
+	}
+
+	void from_xml(const element& aElement, value_parser& aParser) {
+		if(aElement.body.empty()) {
+			if(aElement.children.empty()) {
+				aParser.value_void();
+			}else {
+				if(aElement.attributes.size() == 1 && aElement.attributes[0].first == "value") {
+					primative_value(aElement.name, aElement.attributes[0].second, aParser);
+				}else {
+					//! \todo Object
+					//! \todo Array
+				}
+			}
+		}else {
+			if(aElement.children.empty()) {
+				primative_value(aElement.name, aElement.body, aParser);
+			}else {
+				throw std::runtime_error("solaire::serial::from_xml : Cannot decode element with attributes and body");
+			}
+		}
+	}
 	
 	void from_xml(std::istream& aStream, value_parser& aParser) {
-		//! \todo Implement
+		from_xml(from_xml_tree(aStream), aParser);
 	}
 	
 	// to_xml
