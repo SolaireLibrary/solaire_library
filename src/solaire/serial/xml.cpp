@@ -107,16 +107,40 @@ namespace solaire { namespace serial {
 		aParser.begin_array();
 	}
 
+	bool is_attribute_array(const element& aElement) {
+		//! \todo implement
+		return false;
+	}
+
+	bool is_object_array(const element& aElement) {
+		for(const element& i : aElement.children) {
+			if(i.name == "value") continue;
+			else if(i.name == "array") continue;
+			else if(i.name == "object") continue;
+			else return false;
+		}
+		return true;
+	}
+
 	void pure_attribute(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
-		//! \todo attribute value / attribute array / attribute object
+		if(aElement.attributes.size() == 1 && aElement.attributes[0].first == "value") primative_value(aElement.attributes[0].second, aParser);
+		else if(is_attribute_array(aElement)) attribute_array(aElement, aParser, aConflictMode);
+		else attribute_object(aElement, aParser, aConflictMode);
 	}
 
 	void pure_children(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
-		//! \todo children value / children array / children object
+		if(aElement.children.size() == 1) child_value(aElement.children[0], aParser, aConflictMode);
+		else if(is_object_array(aElement)) child_array(aElement, aParser, aConflictMode);
+		else child_object(aElement, aParser, aConflictMode);
 	}
 
 	void mixed_attribute_children(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
-		//! \todo attribute_children value / attribut_childrene array / attribute_children object
+		const bool aa = is_attribute_array(aElement);
+		const bool oa = is_object_array(aElement);
+		if(aa && oa) attribute_child_array(aElement, aParser, aConflictMode);
+		else if(aa && ! oa) throw std::runtime_error("solaire::serial::from_xml : Attribute array / Child object");
+		else if (oa && !aa) throw std::runtime_error("solaire::serial::from_xml : Attribute object / Child array");
+		else attribute_child_object(aElement, aParser, aConflictMode);
 	}
 
 	void child_value(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
