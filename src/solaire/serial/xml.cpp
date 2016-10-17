@@ -39,9 +39,11 @@ namespace solaire { namespace serial {
 	void from_xml(const element& aElement, value_parser& aParser) {
 		if(aElement.body.empty()) {
 			if(aElement.children.empty()) {
+				// No value
 				aParser.value_void();
 			}else {
 				if(aElement.attributes.size() == 1 && aElement.attributes[0].first == "value") {
+					// Attribute value
 					primative_value(aElement.name, aElement.attributes[0].second, aParser);
 				}else {
 					if(aElement.attributes.empty()) {
@@ -61,11 +63,14 @@ namespace solaire { namespace serial {
 							aParser.end_object();
 						}
 					}else {
-						if(! aElement.children.empty()) throw std::runtime_error("solaire::serial::from_xml : Cannot decode element with attributes and children");
-						// Attribute object
+						// Attribute / children object
 						aParser.begin_object();
 						for(const element::attribute& i : aElement.attributes) {
 							primative_value(i.first, i.second, aParser);
+						}
+						for(const element& i : aElement.children) {
+							aParser.name(i.name.c_str());
+							from_xml(aElement, aParser);
 						}
 						aParser.end_object();
 					}
@@ -73,6 +78,7 @@ namespace solaire { namespace serial {
 			}
 		}else {
 			if(aElement.children.empty()) {
+				// Body value
 				primative_value(aElement.name, aElement.body, aParser);
 			}else {
 				throw std::runtime_error("solaire::serial::from_xml : Cannot decode element with attributes and body");
@@ -129,6 +135,7 @@ namespace solaire { namespace serial {
 		mStateStack.pop_back();
 		if(tmp.is_object) mName = "object";
 		mStream << '<' << '/' << mName.c_str() << '>';
+		//! \todo Write primative members as attributes
 	}
 	
 	void to_xml::name(const char* aName) {
