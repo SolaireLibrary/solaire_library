@@ -27,6 +27,8 @@ namespace solaire { namespace serial {
 		std::string name;
 	};
 
+	void child_value(const element&, value_parser&, const xml_conflict_mode);
+
 	element from_xml_tree(std::istream& aStream) {
 		//! \todo Implement
 		return element();
@@ -118,7 +120,6 @@ namespace solaire { namespace serial {
 	}
 
 	void child_value(const element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
-
 		const bool body = ! aElement.body.empty();
 		const bool attributes = ! aElement.attributes.empty();
 		const bool children = ! aElement.children.empty();
