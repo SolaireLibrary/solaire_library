@@ -18,24 +18,189 @@
 
 namespace solaire { namespace serial {
 
-	struct element {
-		typedef std::pair<std::string, std::string> attribute;
+	typedef implementation::xml_element element;
 
-		std::vector<attribute> attributes;
-		std::vector<element> children;
-		std::string body;
-		std::string name;
-	};
+	bool is_number(const char* const aValue) {
+		bool exponent = false;
+		char last = '\0';
+		const char* i = aValue;
+		while(*i != '\0') {
+			switch(*i) {
+			case '-':
+				if(! (i == aValue || last == 'e')) return false;
+				break;
+			case 'E':
+			case 'e':
+				if(i == aValue || exponent) return false;
+				exponent = true;
+				break;
+			case '+':
+				if(last != 'e') return false;
+				break;
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				break;
+			default:
+				return true;
+			}
+			last = *i == 'E' ? 'e' : *i;
+			++i;
+		}
+	}
 
-	void child_value(const element&, value_parser&, const xml_conflict_mode);
-
-	element from_xml_tree(std::istream& aStream) {
-		//! \todo Implement
-		return element();
+	void child_value(const element&, value_parser&);
+	
+	void from_xml_tree(element& aElement, std::istream& aStream) {
+		char c;
+		
+		// Skip whitespace
+		while(isspace(aStream.peak()) aStream >> c;
+		
+		// Open tag
+		if(c != '<') throw std::runtime_error("solaire::serial::from_xml : Element must open with '<'");
+		
+		if(aStream.peak() == '!') {
+			aStream >> c;
+			aStream >> c;
+			if(c != '-') throw std::runtime_error("solaire::serial::from_xml : Malformed opening tag");
+			aStream >> c;
+			if(c != '-') throw std::runtime_error("solaire::serial::from_xml : Malformed opening tag");
+			aElement.is_comment = true;
+		}else {
+			// Skip whitespace
+			while(isspace(aStream.peak()) aStream >> c;
+			
+			// Read name
+			uint8_t name_length = 0;
+			char name[64];
+			while(true) {
+				if(isspace(c) || c == '/' || c == '>') break;
+				aStream >> c;
+				name[name_length++] = c;
+			}
+			name[name_length] = '\0';
+			aElement.name = name;
+			
+			// Skip whitespace
+			while(isspace(aStream.peak()) aStream >> c;
+			
+			// Read attributes
+			while(c != '/' && c != '>') {
+				std::string val;
+				name_length = 0;
+				while(c != '=') {
+					aStream >> c;
+					name[name_length++] = c;
+				}
+				
+				if(c != '"') throw std::runtime_error("solaire::serial::from_xml : Attribute must open with '\"'");
+				
+				while(c != '"') {
+					aStream.read(&c, 1);
+					val += c;
+				}
+				
+				if(c != '"') throw std::runtime_error("solaire::serial::from_xml : Attribute must close with '\"'");
+				
+				aElement.attributes.push_back({ std::string(name), val });
+			
+				// Skip whitespace
+				while(isspace(aStream.peak()) aStream >> c;
+			}
+			
+			bool singleton = false;
+			
+			// Close tag
+			if(c == '/') {
+				aStream >> c;
+				singleton = true;
+			}
+			
+			if(c == '>'){
+				aStream >> c;
+				// Skip whitespace
+				while(isspace(aStream.peak()) aStream >> c;
+			}else {
+				throw std::runtime_error("solaire::serial::from_xml : Element must open with '<'");
+			}
+		}
+		
+		// Read body
+		if(singleton) return;
+		if(c == '<') {
+			// Read child elements
+		}else {
+			// Read text
+			while(c != '<') {
+				aElement.body += c;
+				aStream.read(&c, 1);
+			}
+			
+			// Trim whitespace
+			while(isspace(aElement.body.back())) aElement.body.pop_back();
+		}
+		
+		if(aElement.is_comment) {
+			aStream >> c;
+			if(c != '-') throw std::runtime_error("solaire::serial::from_xml : Malformed opening tag");
+			aStream >> c;
+			if(c != '-') throw std::runtime_error("solaire::serial::from_xml : Malformed opening tag");
+			aStream >> c;
+			if(c != '>') throw std::runtime_error("solaire::serial::from_xml : Malformed opening tag");
+		}else {
+			// Skip whitespace
+			while(isspace(aStream.peak()) aStream >> c;
+		
+			// Open tag
+			if(c != '<') throw std::runtime_error("solaire::serial::from_xml : Element closing tag must open with '</'");
+			aStream >> c;
+			if(c != '/') throw std::runtime_error("solaire::serial::from_xml : Element closing tag must open with '</'");
+			
+			// Skip whitespace
+			while(isspace(aStream.peak()) aStream >> c;
+			
+			// Read name
+			name_length = 0;
+			while(true) {
+				if(isspace(c) || c == '>') break;
+				aStream >> c;
+				name[name_length++] = c;
+			}
+			name[name_length] = '\0';
+			
+			// Skip whitespace
+			while(isspace(aStream.peak()) aStream >> c;
+			
+			// Close tag
+			if(c != '>') throw std::runtime_error("solaire::serial::from_xml : Element must close with '>'");
+		}
 	}
 
 	void primative_value(const std::string& aValue, value_parser& aParser) {
-		//! \todo Implement
+		if(aValue.size() == 1) {
+			aValue.value_char(aValue[0]);
+		}else if(aValue == "void" || aValue == "null") {
+			aParser.value_void();
+		}else if(aValue == "true" || aValue == "TRUE" || aValue == "True") {
+			aParser.value_bool(true);
+		}else if(aValue == "false" || aValue == "FALSE" || aValue == "False") {
+			aParser.value_bool(false);
+		}else if(is_number(aValue.c_str())) {
+			double tmp;
+			sscanf(aValue.c_str(), "%lf", &tmp);
+			aParser.value_float(tmp);
+		}else {
+			aParser.value_string(aValue.c_str());
+		}
+		//! \todo Handle pointers
 	}
 
 	inline void primative_value(const std::string& aName, const std::string& aValue, value_parser& aParser) {
@@ -120,7 +285,7 @@ namespace solaire { namespace serial {
 		return true;
 	}
 
-	bool is_object_array(const element& aElement) {
+	bool is_child_array(const element& aElement) {
 		for(const element& i : aElement.children) {
 			if(i.name == "SOLAIRE_XML_VALUE") continue;
 			else if(i.name == "SOLAIRE_XML_ARRAY") continue;
@@ -138,13 +303,13 @@ namespace solaire { namespace serial {
 
 	void pure_children(element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
 		if(aElement.children.size() == 1) child_value(aElement.children[0], aParser, aConflictMode);
-		else if(is_object_array(aElement)) child_array(aElement, aParser, aConflictMode);
+		else if(is_child_array(aElement)) child_array(aElement, aParser, aConflictMode);
 		else child_object(aElement, aParser, aConflictMode);
 	}
 
 	void mixed_attribute_children(element& aElement, value_parser& aParser, const xml_conflict_mode aConflictMode) {
 		const bool aa = is_attribute_array(aElement);
-		const bool oa = is_object_array(aElement);
+		const bool oa = is_child_array(aElement);
 		if(aa && oa) attribute_child_array(aElement, aParser, aConflictMode);
 		else attribute_child_object(aElement, aParser, aConflictMode);
 	}
@@ -176,55 +341,141 @@ namespace solaire { namespace serial {
 	}
 	
 	void from_xml(std::istream& aStream, value_parser& aParser) {
-		child_value(from_xml_tree(aStream), aParser, aConflictMode);
+		child_value(implementation::xml_element::read(aStream), aParser, aConflictMode);
+	}
+	
+	namespace implementation {
+		// xml_element
+		
+		void xml_element::write(std::ostream& aStream, const xml_element& aElement) {
+			//! \todo Write header element
+			
+			if(aElement.is_comment) {
+				aStream << "<!-- " << aElement.name << " -->";
+			}else {
+				aStream << '<' << aElement.name;
+				for(const xml_element::attribute& i : aElement.attributes) {
+					aStream << ' ' << i.first << '=' << '"' << i.second << '"';
+				}
+				
+				if(aStream.body.empty()) {
+					if(aElement.children.empty()) {
+						aStream << '/' << '>';
+						return;
+					}else {
+						aStream << '>';
+						for(const xml_element& i : aElement.children) {
+							write(aStream, i);
+						}
+					}
+				}else {
+					aStream << '>' << aElement.body;
+				}
+				
+				aStream << '<' << '/' << aElement.name << '>';
+			}
+		}
+		
+		xml_element xml_element::read(std::istream& aStream) {
+			//! \todo Read header element
+			xml_element root;
+			from_xml_tree(root, aStream);
+			return root;
+		}
+		
+		xml_element::xml_element() :
+			attributes(0),
+			children(0),
+			body(),
+			name(),
+			is_comment(false)
+		{}
 	}
 	
 	// to_xml
 
 	//! \todo Add header element
 	
-	to_xml::to_xml(std::ostream& aStream) :
-		mStream(aStream)
+	to_xml::to_xml(std::ostream& aStream, const primative_value_mode aPrimitiveMode) :
+		mStream(aStream),
+		mPrimitiveMode(aPrimitiveMode)
 	{}
 
 	void to_xml::write_value(const char* const aValue) {
-		state& tmp = mStateStack.back();
-		++tmp.size;
-		if(tmp.is_array) mName = "SOLAIRE_XML_VALUE";
-		mStream << '<' << mName.c_str() << " SOLAIRE_XML_VALUE=\"" << aValue << "\"/>";
+		const state& s = mStateStack.back();
+		
+		const auto as_attribute = [&]() {
+			s.element->attributes.push_back({ mName, std::string(aValue) });
+			mName.clear();
+		};
+		
+		const auto as_child = [&]() {
+			as_child();
+			element e;
+			std::swap(e.name, mName);
+			e.body = aValue;
+			s.element->children.push_back(e);
+		};
+		
+		if(s.is_object){
+			if(mPrimitiveMode == PRIMITIVE_AS_ATTRIBUTE) {
+				as_attribute();
+			}else if(mPrimitiveMode == PRIMITIVE_AS_ELEMENT) {
+				as_child();
+			else {
+				throw std::runtime_error("solaire::serial::to_xml::write_value : Invalid primitive encoding");
+			}
+		}else { 
+			mName = "SOLAIRE_XML_VALUE";
+			as_child();
+			mName.clear()
+		}
 	}
 	
 	void to_xml::begin_array() {
 		if(mStateStack.empty() || mStateStack.back().is_array) mName = "SOLAIRE_XML_ARRAY";
 		state tmp;
-		tmp.size = 0;
-		tmp.is_object = 1;
+		tmp.is_array = 1;
+		if(mStateStack.empty()){
+			tmp.element = &mRoot;
+		}else {
+			const state& s = mStateStack.back();
+			element e;
+			std::swap(mName, e.name);
+			s.element->children.push_back(e);
+			tmp.element = &s.element->children.back();
+		}
 		mStateStack.push_back(tmp);
-		mStream << '<' << mName.c_str() << '>';
 	}
 	
 	void to_xml::end_array() {
 		const state tmp = mStateStack.back();
+		if(! tmp.is_array) throw std::runtime_error("solaire::serial::to_xml::end_array : Current value is not array");
 		mStateStack.pop_back();
-		if (tmp.is_object) mName = "SOLAIRE_XML_ARRAY";
-		mStream << '</' << mName.c_str() << '>';
+		if(mStateStack.empty()) element::write(mStream, mRoot);
 	}
 	
 	void to_xml::begin_object() {
 		if(mStateStack.empty() || mStateStack.back().is_array) mName = "SOLAIRE_XML_OBJECT";
 		state tmp;
-		tmp.size = 0;
 		tmp.is_object = 1;
+		if(mStateStack.empty()){
+			tmp.element = &mRoot;
+		}else {
+			const state& s = mStateStack.back();
+			element e;
+			std::swap(mName, e.name);
+			s.element->children.push_back(e);
+			tmp.element = &s.element->children.back();
+		}
 		mStateStack.push_back(tmp);
-		mStream << '<' << mName.c_str() << '>';
 	}
 	
 	void to_xml::end_object() {
 		const state tmp = mStateStack.back();
+		if(! tmp.is_object) throw std::runtime_error("solaire::serial::to_xml::end_object : Current value is not object");
 		mStateStack.pop_back();
-		if(tmp.is_object) mName = "SOLAIRE_XML_OBJECT";
-		mStream << '<' << '/' << mName.c_str() << '>';
-		//! \todo Write primative members as attributes
+		if(mStateStack.empty()) element::write(mStream, mRoot);
 	}
 	
 	void to_xml::name(const char* aName) {

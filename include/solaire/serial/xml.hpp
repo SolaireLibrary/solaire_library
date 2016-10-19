@@ -20,20 +20,46 @@
 #include "value_parser.hpp"
 
 namespace solaire { namespace serial {
+
+	namespace implementation {
+		struct xml_element {
+			typedef std::pair<std::string, std::string> attribute;
+
+			std::vector<attribute> attributes;
+			std::vector<element> children;
+			std::string body;
+			std::string name;
+			bool is_comment;
+		
+			static void write(std::ostream&, const xml_element&);
+			static xml_element read(std::istream&);
+			xml_element();
+		};
+	}
+
 	class to_xml : public value_parser {
+	public:
+		enum primitive_value_mode : uint8_t {
+			PRIMITIVE_AS_ATTRIBUTE,
+			PRIMITIVE_AS_ELEMENT
+		};
 	private:
 		struct state {
-			uint16_t is_array : 1;
-			uint16_t is_object : 1;
-			uint16_t size : 14;
+			struct {
+				uint8_t is_array : 1;
+				uint8_t is_object : 1;
+			};
+			implementation::xml_element* element;
 		};
 		std::string mName;
 		std::vector<state> mStateStack;
+		implementation::xml_element mRoot;
 		std::ostream& mStream;
+		const primitive_value_mode mPrimitiveMode;
 
 		void write_value(const char* const);
 	public:
-		to_xml(std::ostream&);
+		to_xml(std::ostream&, const primitive_value_mode = PRIMITIVE_AS_ATTRIBUTE);
 		// Inherited from value_parser
 		void begin_array() override;
 		void end_array() override;
