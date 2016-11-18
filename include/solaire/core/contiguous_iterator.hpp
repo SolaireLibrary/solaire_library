@@ -39,3 +39,4 @@ namespace solaire {
 	template<class T>
 	using const_contiguous_iterator = iterator<contiguous_iterator_template<T>, true>;
 }
+#endif

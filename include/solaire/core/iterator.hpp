@@ -15,13 +15,14 @@
 #ifndef SOLAIRE_CORE_ITERATOR_HPP
 #define SOLAIRE_CORE_ITERATOR_HPP
 
-struct iterator_template {
-	typedef T type;
-	void forward(const int aOffset);
-	void backward(const int aOffset);
-	size_t get_offset(const iterator_template& aOther) const;
-	void* get();
-};
+namespace solaire {
+	struct iterator_template {
+		typedef void type;
+		void forward(const int aOffset);
+		void backward(const int aOffset);
+		size_t get_offset(const iterator_template& aOther) const;
+		void* get();
+	};
 
 	template<class TEMPLATE, bool CONST = ! std::is_same<typename TEMPLATE::type, std::remove_const<typename TEMPLATE::type>::type>::value>
 	class iterator {
@@ -44,14 +45,15 @@ struct iterator_template {
 		inline size_t operator-(const iterator<TEMPLATE,CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate); }
 		inline iterator<TEMPLATE,CONST> operator+(const int aOffset) const { iterator<TEMPLATE,CONST> tmp = *this; tmp += aOffset;  return tmp; }
 		inline iterator<TEMPLATE,CONST> operator-(const int aOffset) const { iterator<TEMPLATE,CONST> tmp = *this; tmp -= aOffset;  return tmp; }
-		inline bool operator==(const iterator<TEMPLATE, CONST>& aOther) const { return mHelper != return mTemplate.get_offset(aOther.mTemplate) == 0; }
-		inline bool operator!=(const iterator<TEMPLATE, CONST>& aOther) const { return mHelper != return mTemplate.get_offset(aOther.mTemplate) != 0; }
-		inline bool operator<(const iterator<TEMPLATE, CONST>& aOther) const { return mHelper != return mTemplate.get_offset(aOther.mTemplate) > 0; }
-		inline bool operator>(const iterator<TEMPLATE, CONST>& aOther) const { return mHelper != return mTemplate.get_offset(aOther.mTemplate) < 0; }
-		inline bool operator<=(const iterator<TEMPLATE, CONST>& aOther) const { return mHelper != return mTemplate.get_offset(aOther.mTemplate) >= 0; }
-		inline bool operator>=(const iterator<TEMPLATE, CONST>& aOther) const { return mHelper != return mTemplate.get_offset(aOther.mTemplate) <= 0; }
+		inline bool operator==(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) == 0; }
+		inline bool operator!=(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) != 0; }
+		inline bool operator<(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) > 0; }
+		inline bool operator>(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) < 0; }
+		inline bool operator<=(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) >= 0; }
+		inline bool operator>=(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) <= 0; }
 		
 		template<bool C = CONST> inline typename std::enable_if<!C, type*>::type operator->() { return mTemplate.get(); }
 		template<bool C = CONST> inline typename std::enable_if<!C, type&>::type operator*() { return *mTemplate.get(); }
 	};
 }
+#endif
