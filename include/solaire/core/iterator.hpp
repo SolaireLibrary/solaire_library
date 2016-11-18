@@ -17,44 +17,44 @@
 
 namespace solaire {
 	enum {
-		ITERATOR_DATA_SIZE = 16
-	};
+	ITERATOR_DATA_SIZE = 16
+};
 
-	struct iterator_helper {
-		void*(*dereference)(void*);
-		void(*increment)(void*, int32_t);
-		int32_t(*offset)(const void*, const void*);
-	};
+struct iterator_helper {
+	void*(*dereference)(void*);
+	void(*increment)(void*, int32_t);
+	int32_t(*offset)(const void*, const void*);
+};
 
-	template<class T>
-	class iterator {
-	private:
-		uint8_t mData[ITERATOR_DATA_SIZE];
-		const iterator_helper* mHelper;
-	public:
-		iterator() : mData(), mHelper(nullptr) {}
-		iterator(const void* aData, const iterator_helper& aHelper) : mData(), mHelper(&aHelper) { memcpy(mData, aData, ITERATOR_DATA_SIZE); }
+template<class T>
+class iterator {
+private:
+	uint8_t mData[ITERATOR_DATA_SIZE];
+	const iterator_helper* mHelper;
+public:
+	iterator() : mData(), mHelper(nullptr)														{}
+	iterator(const void* aData, const iterator_helper& aHelper) : mData(), mHelper(&aHelper)	{ memcpy(mData, aData, ITERATOR_DATA_SIZE); }
 
-		inline T* operator->() { return static_cast<T*>(mHelper->dereference(mData)); }
-		inline const T* operator->() const { return static_cast<T*>(mHelper->dereference(mData)); }
-		inline T& operator*() { return *static_cast<T*>(mHelper->dereference(mData)); }
-		inline const T& operator*() const { return *static_cast<T*>(mHelper->dereference(mData)); }
-		inline int32_t operator-(const iterator<T>& aOther) const { return mHelper != aOther.mHelper ? 0 : mHelper->offset(mData, aOther.mData); }
-		inline iterator<T>& operator+=(int32_t aOffset) { mHelper->increment(mData, aOffset); return *this; }
-		inline iterator<T>& operator-=(int32_t aOffset) { mHelper->increment(mData, -aOffset); return *this; }
-		inline iterator<T>& operator++() { mHelper->increment(mData, 1); return *this; }
-		inline iterator<T>& operator--() { mHelper->increment(mData, -1); return *this; }
-		inline iterator<T> operator++(int) { iterator<T> tmp = *this; mHelper->increment(mData, 1); return tmp; }
-		inline iterator<T> operator--(int) { iterator<T> tmp = *this; mHelper->increment(mData, -1); return tmp; }
-		inline iterator<T> operator+(int32_t aOffset) const { iterator<T> tmp = *this; mHelper->increment(tmp.mData, aOffset); return tmp; }
-		inline iterator<T> operator-(int32_t aOffset) const { iterator<T> tmp = *this; mHelper->increment(tmp.mData, aOffset); return tmp; }
-		inline bool operator==(const iterator<T>& aOther) const { return mHelper != aOther.mHelper ? false : mHelper->offset(mData, aOther.mData) == 0; }
-		inline bool operator!=(const iterator<T>& aOther) const { return mHelper != aOther.mHelper ? true : mHelper->offset(mData, aOther.mData) != 0; }
-		inline bool operator<(const iterator<T>& aOther) const { return mHelper != aOther.mHelper ? false : mHelper->offset(mData, aOther.mData) > 0; }
-		inline bool operator>(const iterator<T>& aOther) const { return mHelper != aOther.mHelper ? false : mHelper->offset(mData, aOther.mData) < 0; }
-		inline bool operator<=(const iterator<T>& aOther) const { return mHelper != aOther.mHelper ? false : mHelper->offset(mData, aOther.mData) >= 0; }
-		inline bool operator>=(const iterator<T>& aOther) const { return mHelper != aOther.mHelper ? false : mHelper->offset(mData, aOther.mData) <= 0; }
-	};
+	inline T* operator->()										{ return static_cast<T*>(mHelper->dereference(mData)); }
+	inline const T* operator->() const							{ return static_cast<T*>(mHelper->dereference(mData)); }
+	inline T& operator*()										{ return *static_cast<T*>(mHelper->dereference(mData)); }
+	inline const T& operator*() const							{ return *static_cast<T*>(mHelper->dereference(mData)); }
+	inline int32_t operator-(const iterator<T>& aOther) const	{ return mHelper != aOther.mHelper ? 0 : mHelper->offset(mData, aOther.mData); }
+	inline iterator<T>& operator+=(int32_t aOffset)				{ mHelper->increment(mData, aOffset); return *this; }
+	inline iterator<T>& operator-=(int32_t aOffset)				{ mHelper->increment(mData, -aOffset); return *this; }
+	inline iterator<T>& operator++()							{ mHelper->increment(mData, 1); return *this; }
+	inline iterator<T>& operator--()							{ mHelper->increment(mData, -1); return *this; }
+	inline iterator<T> operator++(int)							{ iterator<T> tmp = *this; mHelper->increment(mData, 1); return tmp; }
+	inline iterator<T> operator--(int)							{ iterator<T> tmp = *this; mHelper->increment(mData, -1); return tmp; }
+	inline iterator<T> operator+(int32_t aOffset) const			{ iterator<T> tmp = *this; mHelper->increment(tmp.mData, aOffset); return tmp; }
+	inline iterator<T> operator-(int32_t aOffset) const			{ iterator<T> tmp = *this; mHelper->increment(tmp.mData, aOffset); return tmp; }
+	inline bool operator==(const iterator<T>& aOther) const		{ return mHelper != aOther.mHelper ? false : mHelper->offset(mData, aOther.mData) == 0; }
+	inline bool operator!=(const iterator<T>& aOther) const		{ return mHelper != aOther.mHelper ? true : mHelper->offset(mData, aOther.mData) != 0; }
+	inline bool operator<(const iterator<T>& aOther) const		{ return mHelper != aOther.mHelper ? false : mHelper->offset(mData, aOther.mData) > 0; }
+	inline bool operator>(const iterator<T>& aOther) const		{ return mHelper != aOther.mHelper ? false : mHelper->offset(mData, aOther.mData) < 0; }
+	inline bool operator<=(const iterator<T>& aOther) const		{ return mHelper != aOther.mHelper ? false : mHelper->offset(mData, aOther.mData) >= 0; }
+	inline bool operator>=(const iterator<T>& aOther) const		{ return mHelper != aOther.mHelper ? false : mHelper->offset(mData, aOther.mData) <= 0; }
+};
 
 	//template<class TEMPLATE, bool CONST = ! std::is_same<typename TEMPLATE::type, std::remove_const<typename TEMPLATE::type>::type>::value>
 	//class iterator {
