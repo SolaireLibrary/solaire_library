@@ -28,32 +28,34 @@ namespace solaire {
 	class iterator {
 	public:
 		typedef typename TEMPLATE::type type;
+		typedef iterator<TEMPLATE, CONST> this_t;
 	private:
 		TEMPLATE mTemplate;
 	public:
 		iterator() : mTemplate() {}
-		template<bool CONST2 = CONST> iterator(const iterator<TEMPLATE, CONST2>& aOther) : mTemplate(aOther.mTemplate) {}
 		iterator(const TEMPLATE& aTemplate) : mTemplate(aTemplate) {}
-		inline const type* operator->() const { return const_cast<TEMPLATE*>(&mTemplate)->get(); }
-		inline const type& operator*() const { return *const_cast<TEMPLATE*>(&mTemplate)->get(); }
-		inline iterator<TEMPLATE,CONST>& operator+=(const int aOffset) { mTemplate.forward(aOffset); *this; }
-		inline iterator<TEMPLATE,CONST>& operator-=(const int aOffset) { mTemplate.forward(aOffset); *this; }
-		inline iterator<TEMPLATE,CONST>& operator++() { mTemplate.forward(1);  return *this; }
-		inline iterator<TEMPLATE,CONST>& operator--() { mTemplate.backward(1);  return *this; }
-		inline iterator<TEMPLATE,CONST> operator++(int) { iterator<TEMPLATE,CONST> tmp = *this; mTemplate.forward(1);  return tmp; }
-		inline iterator<TEMPLATE,CONST> operator--(int) { iterator<TEMPLATE,CONST> tmp = *this; mTemplate.backward(1);  return tmp; }
-		inline size_t operator-(const iterator<TEMPLATE,CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate); }
-		inline iterator<TEMPLATE,CONST> operator+(const int aOffset) const { iterator<TEMPLATE,CONST> tmp = *this; tmp += aOffset;  return tmp; }
-		inline iterator<TEMPLATE,CONST> operator-(const int aOffset) const { iterator<TEMPLATE,CONST> tmp = *this; tmp -= aOffset;  return tmp; }
-		inline bool operator==(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) == 0; }
-		inline bool operator!=(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) != 0; }
-		inline bool operator<(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) > 0; }
-		inline bool operator>(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) < 0; }
-		inline bool operator<=(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) >= 0; }
-		inline bool operator>=(const iterator<TEMPLATE, CONST>& aOther) const { return mTemplate.get_offset(aOther.mTemplate) <= 0; }
+		template<bool CONST2 = CONST> iterator(const iterator<TEMPLATE, CONST2>& aOther) : mTemplate(aOther.mTemplate) {}
+
+		inline const type* operator->() const									{ return const_cast<TEMPLATE*>(&mTemplate)->get(); }
+		inline const type& operator*() const									{ return *const_cast<TEMPLATE*>(&mTemplate)->get(); }
+		inline this_t& operator+=(const int aOffset)							{ mTemplate.forward(aOffset); return *this; }
+		inline this_t& operator-=(const int aOffset)							{ mTemplate.forward(aOffset); return *this; }
+		inline this_t& operator++()												{ mTemplate.forward(1);  return *this; }
+		inline this_t& operator--()												{ mTemplate.backward(1);  return *this; }
+		inline this_t operator++(int)											{ this_t tmp = *this; mTemplate.forward(1);  return tmp; }
+		inline this_t operator--(int)											{ this_t tmp = *this; mTemplate.backward(1);  return tmp; }
+		inline size_t operator-(const this_t& aOther) const						{ return mTemplate.get_offset(aOther.mTemplate); }
+		inline this_t operator+(const int aOffset) const						{ this_t tmp = *this; tmp += aOffset;  return tmp; }
+		inline this_t operator-(const int aOffset) const						{ this_t tmp = *this; tmp -= aOffset;  return tmp; }
+		inline bool operator==(const iterator<TEMPLATE, CONST>& aOther) const	{ return mTemplate.get_offset(aOther.mTemplate) == 0; }
+		inline bool operator!=(const iterator<TEMPLATE, CONST>& aOther) const	{ return mTemplate.get_offset(aOther.mTemplate) != 0; }
+		inline bool operator<(const iterator<TEMPLATE, CONST>& aOther) const	{ return mTemplate.get_offset(aOther.mTemplate) > 0; }
+		inline bool operator>(const iterator<TEMPLATE, CONST>& aOther) const	{ return mTemplate.get_offset(aOther.mTemplate) < 0; }
+		inline bool operator<=(const iterator<TEMPLATE, CONST>& aOther) const	{ return mTemplate.get_offset(aOther.mTemplate) >= 0; }
+		inline bool operator>=(const iterator<TEMPLATE, CONST>& aOther) const	{ return mTemplate.get_offset(aOther.mTemplate) <= 0; }
 		
-		template<bool C = CONST> inline typename std::enable_if<!C, type*>::type operator->() { return mTemplate.get(); }
-		template<bool C = CONST> inline typename std::enable_if<!C, type&>::type operator*() { return *mTemplate.get(); }
+		template<bool C = CONST> inline typename std::enable_if<!C, type*>::type operator->()	{ return mTemplate.get(); }
+		template<bool C = CONST> inline typename std::enable_if<!C, type&>::type operator*()	{ return *mTemplate.get(); }
 	};
 }
 #endif

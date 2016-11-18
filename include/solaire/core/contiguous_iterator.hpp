@@ -30,7 +30,7 @@ namespace solaire {
 		inline void forward(const int aOffset) { mPtr += aOffset; }
 		inline void backward(const int aOffset) { mPtr -= aOffset };
 		inline size_t get_offset(const contiguous_iterator_template<T>& aOther) const { return mPtr - aOther.mPtr; }
-		inline T* get() { return *mPtr; }
+		inline T* get() { return mPtr; }
 	};
 
 	template<class T>
