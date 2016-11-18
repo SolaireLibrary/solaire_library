@@ -18,51 +18,24 @@
 #include "iterator.hpp"
 
 namespace solaire {
+
 	template<class T>
-	const iterator_helper& create_contiguous_iterator(T* aBase, void* aData) {
-		struct data {
-			T* ptr;
-			int32_t offset;
-		};
+	class contiguous_iterator_template {
+	private:
+		T* mPtr;
+	public:
+		typedef T type;
+		contiguous_iterator_template() : mPtr(nullptr) {}
+		contiguous_iterator_template(T* const aPtr) : mPtr(aPtr) {}
+		inline void forward(const int aOffset) { mPtr += aOffset; }
+		inline void backward(const int aOffset) { mPtr -= aOffset };
+		inline size_t get_offset(const contiguous_iterator_template<T>& aOther) const { return mPtr - aOther.mPtr; }
+		inline T* get() { return *mPtr; }
+	};
 
-		static iterator_helper OBJ = {
-			[](void* aObj)->void* {
-			data& d = *static_cast<data*>(aObj);
-			return d.ptr + d.offset;
-		},
-			[](void* aObj, int32_t aOffset)->void {
-			data& d = *static_cast<data*>(aObj);
-			d.offset += aOffset;
-		},
-			[](const void* aObj, const void* aOther)->int32_t {
-			const data& a = *static_cast<const data*>(aObj);
-			const data& b = *static_cast<const data*>(aOther);
-			return a.offset - b.offset;
-		}
-		};
-		data& d = *static_cast<data*>(aData);
-		d.ptr = aBase;
-		d.offset = 0;
-		return OBJ;
-	}
+	template<class T>
+	using contiguous_iterator = iterator<contiguous_iterator_template<T>, false>;
 
-	//template<class T>
-	//class contiguous_iterator_template {
-	//private:
-	//	T* mPtr;
-	//public:
-	//	typedef T type;
-	//	contiguous_iterator_template() : mPtr(nullptr) {}
-	//	contiguous_iterator_template(T* const aPtr) : mPtr(aPtr) {}
-	//	inline void forward(const int aOffset) { mPtr += aOffset; }
-	//	inline void backward(const int aOffset) { mPtr -= aOffset };
-	//	inline int get_offset(const contiguous_iterator_template<T>& aOther) const { return mPtr - aOther.mPtr; }
-	//	inline T* get() { return *mPtr; }
-	//};
-
-	//template<class T>
-	//using contiguous_iterator = iterator<contiguous_iterator_template<T>, false>;
-
-	//template<class T>
-	//using const_contiguous_iterator = iterator<contiguous_iterator_template<T>, true>;
+	template<class T>
+	using const_contiguous_iterator = iterator<contiguous_iterator_template<T>, true>;
 }
