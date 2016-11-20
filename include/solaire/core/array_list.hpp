@@ -47,11 +47,11 @@ namespace solaire {
 		inline iterator end() { return mData + mSize; }
 		constexpr const_iterator end() const { return mData + mSize; }
 		inline void reserve(size_t aSize) const { if(aSize > mCapacity) resize(aSize); }
+		inline void pop_front() { erase(begin()); }
 
 		//! \todo move constructor
 		//! \todo copy / move assignment
 		//! \todo insert
-		//! \todo pop_front
 
 		constexpr array_list() :
 			mData(nullptr), 
