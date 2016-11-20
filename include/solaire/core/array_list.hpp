@@ -118,8 +118,12 @@ namespace solaire {
 		array_list<T, I, ALLOCATOR, DEFAULT_ALLOCATION>& operator=(const array_list<T, I2, ALLOCATOR, DEFAULT_ALLOCATION2>& aOther) {
 			std::swap(mAllocator, aOther.mAllocator);
 			std::swap(mData, aOther.mData);
-			std::swap(mSize, aOther.mSize);
-			std::swap(mCapacity, aOther.mCapacity);
+			size_t tmp = mSize;
+			mSize = aOther.mSize;
+			aOther.mSize = tmp;
+			tmp = mCapacity;
+			mCapacity = aOther.mCapacity;
+			aOther.mCapacity = tmp;
 			return *this;
 		}
 
