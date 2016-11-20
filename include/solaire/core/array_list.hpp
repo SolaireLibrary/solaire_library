@@ -48,10 +48,10 @@ namespace solaire {
 		constexpr const_iterator end() const { return mData + mSize; }
 		inline void reserve(size_t aSize) const { if(aSize > mCapacity) resize(aSize); }
 		inline void pop_front() { erase(begin()); }
+		inline T& push_front(const T& aValue) { return *insert(begin(), aValue); }
 
 		//! \todo move constructor
 		//! \todo copy / move assignment
-		//! \todo insert
 
 		constexpr array_list() :
 			mData(nullptr), 
@@ -96,17 +96,19 @@ namespace solaire {
 			return mData[mSize++] = aValue;
 		}
 
-		T& push_front(const T& aValue) {
-			if(mSize == mCapacity) resize(mCapacity == 0 ? DEFAULT_ALLOCATION : mCapacity * 2);
-			for(size_t i = 0; i < mSize; ++i) mData[mSize - i] = std::move(mData[mSize - (i + 1)]);
-			++mSize;
-			return mData[0] = aValue;
-		}
-
 		iterator erase(const const_iterator aPosition) {
 			const size_t offset = aPosition - mData;
 			--mSize;
 			for(size_t i = offset; i < mSize; ++i) mData[i] = std::move(mData[i + 1]);
+			return mData + offset;
+		}
+
+		iterator insert(const const_iterator aPosition, const T& aValue) {
+			const size_t offset = aPosition - mData;
+			if(mSize == mCapacity) resize(mCapacity == 0 ? DEFAULT_ALLOCATION : mCapacity * 2);
+			for(size_t i = mSize; i > offset; --i) mData[i] = std::move(mData[i-1]);
+			mData[offset] = aValue;
+			++mSize;
 			return mData + offset;
 		}
 	private:
