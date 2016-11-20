@@ -30,7 +30,7 @@ namespace solaire {
 	template<size_t SIZE>
 	class static_allocator : public allocator {
 	private:
-		uint8_t mData[SIZE];
+		mutable uint8_t mData[SIZE];
 		bool mAllocated;
 
 		static_allocator(const static_allocator&) = delete;
