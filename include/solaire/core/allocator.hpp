@@ -89,6 +89,8 @@ namespace solaire {
 
 		inline static void deallocate(heap_allocator& aData) { 
 			operator delete(aData.mData); 
+			aData.mData = nullptr;
+			aData.mSize = 0;
 		}
 
 		inline static heap_allocator allocate(size_t aSize) {
