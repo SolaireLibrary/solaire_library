@@ -29,6 +29,9 @@ namespace solaire {
 	private:
 		uint8_t mData[SIZE];
 		bool mAllocated;
+
+		static_allocator(static_allocator&&) = delete;
+		static_allocator<SIZE>& operator=(static_allocator&&) = delete;
 	public:
 		constexpr static_allocator() : mData(), mAllocated(false) {}
 		inline void deallocate(void* aData) override { if (aData == mData) mAllocated = false; }
