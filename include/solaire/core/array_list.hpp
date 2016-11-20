@@ -46,8 +46,10 @@ namespace solaire {
 		constexpr const_iterator begin() const { return mData; }
 		inline iterator end() { return mData + mSize; }
 		constexpr const_iterator end() const { return mData + mSize; }
+		inline void reserve(size_t aSize) const { if(aSize > mCapacity) resize(aSize); }
 
-		//! \todo Copy / move constructor
+		//! \todo move constructor
+		//! \todo copy / move assignment
 		//! \todo push_front
 		//! \todo Erase / insert
 
@@ -63,6 +65,20 @@ namespace solaire {
 			mCapacity(0)
 		{
 			resize(aCapacity);
+		}
+
+
+		template<class T2, class I2, class ALLOCATOR2, I DEFAULT_ALLOCATION2>
+		array_list(const array_list<T2, I2, ALLOCATOR2, DEFAULT_ALLOCATION2>& aOther) :
+			mData(nullptr),
+			mSize(0),
+			mCapacity(0)
+		{
+			const size_t s = aOther.size();
+			mData = static_cast<T*>(mAllocator.allocate(aCapacity * sizeof(T)));
+			mSize = s;
+			mCapacity = s;
+			for(size_t i = 0; i < s; ++i) new(mData + i) T(aOther[i]);
 		}
 
 		~array_list() {
