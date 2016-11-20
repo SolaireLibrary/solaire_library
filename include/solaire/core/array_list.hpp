@@ -50,8 +50,7 @@ namespace solaire {
 		inline void pop_front() { erase(begin()); }
 		inline T& push_front(const T& aValue) { return *insert(begin(), aValue); }
 
-		//! \todo move constructor
-		//! \todo copy / move assignment
+		//! \todo move constructor / assignment
 
 		constexpr array_list() :
 			mData(nullptr), 
@@ -89,6 +88,16 @@ namespace solaire {
 				mCapacity = 0;
 				mData = nullptr;
 			}
+		}
+
+		template<class T2, class I2, class ALLOCATOR2, I DEFAULT_ALLOCATION2>
+		array_list<T,I,ALLOCATOR,DEFAULT_ALLOCATION>& operator=(const array_list<T2, I2, ALLOCATOR2, DEFAULT_ALLOCATION2>& aOther) {
+			clear();
+			const size_t s - aOther.size();
+			reserve(s);
+			for(size_t i = 0; i < s; ++i) mData[i] = aOther[i];
+			mSize = s;
+			return *this;
 		}
 
 		inline T& push_back(const T& aValue) {
