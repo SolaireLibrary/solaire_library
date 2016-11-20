@@ -26,6 +26,9 @@ namespace solaire {
 		typedef ALLOCATOR allocator;
 		typedef T* iterator;
 		typedef const T* const_iterator;
+
+		template<class T2 = T, class I2 = I, class ALLOCATOR2 = ALLOCATOR, I2 DEFAULT_ALLOCATION2 = DEFAULT_ALLOCATION>
+		friend class array_list;
 	private:
 		ALLOCATOR mAllocator;
 		T* mData;
@@ -49,8 +52,6 @@ namespace solaire {
 		inline void reserve(size_t aSize) const { if(aSize > mCapacity) resize(aSize); }
 		inline void pop_front() { erase(begin()); }
 		inline T& push_front(const T& aValue) { return *insert(begin(), aValue); }
-
-		//! \todo move assignment
 
 		constexpr array_list() :
 			mData(nullptr), 
@@ -109,6 +110,16 @@ namespace solaire {
 			reserve(s);
 			for(size_t i = 0; i < s; ++i) mData[i] = aOther[i];
 			mSize = s;
+			return *this;
+		}
+
+
+		template<class I2 = I, I2 DEFAULT_ALLOCATION2 = DEFAULT_ALLOCATION, class ENABLE = typename std::enable_if<std::is_move_assignable<ALLOCATOR>::value>::type>
+		array_list<T, I, ALLOCATOR, DEFAULT_ALLOCATION>& operator=(const array_list<T, I2, ALLOCATOR, DEFAULT_ALLOCATION2>& aOther) {
+			std::swap(mAllocator, aOther.mAllocator);
+			std::swap(mData, aOther.mData);
+			std::swap(mSize, aOther.mSize);
+			std::swap(mCapacity, aOther.mCapacity);
 			return *this;
 		}
 
