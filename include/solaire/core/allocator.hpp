@@ -38,7 +38,6 @@ namespace solaire {
 		static_allocator(static_allocator&&) = delete;
 		static_allocator<SIZE>& operator=(static_allocator&&) = delete;
 	public:
-
 		constexpr static_allocator() : 
 			mData(),
 			mAllocated(false)
