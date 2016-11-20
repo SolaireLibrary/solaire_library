@@ -19,39 +19,83 @@
 
 namespace solaire {
 	struct allocator {
-		virtual ~allocator() {}
-		virtual void* allocate(size_t) = 0;
-		virtual void deallocate(void*) = 0;
+		static allocator allocate(size_t);
+		static void deallocate(allocator&);
+
+		void* get() const;
+		size_t size() const;
 	};
 
 	template<size_t SIZE>
-	class static_allocator : public allocator {
+	class static_allocator {
 	private:
 		uint8_t mData[SIZE];
-		bool mAllocated;
 
+		static_allocator(const static_allocator&) = delete;
+		static_allocator<SIZE>& operator=(const static_allocator&) = delete;
 		static_allocator(static_allocator&&) = delete;
 		static_allocator<SIZE>& operator=(static_allocator&&) = delete;
 	public:
-		constexpr static_allocator() : mData(), mAllocated(false) {}
-		inline void deallocate(void* aData) override { if (aData == mData) mAllocated = false; }
+		inline void* get() const { return mData; }
+		inline size_t size() const { return SIZE; }
 
-		void* allocate(size_t aSize) override {
-			if(mAllocated) throw std::runtime_error("solaire::static_allocator::allocate : Memory must be deallocated before it can be allocated again");
+		constexpr static_allocator() : 
+			mData() 
+		{}
+
+		inline static void deallocate(allocator& aData) {
+
+		}
+
+		inline static void* allocate(size_t aSize) {
 			if(aSize > SIZE) throw std::runtime_error("solaire::static_allocator::allocate : Allocation size is too large");
-			mAllocated = true;
-			return mData;
+			return static_allocator();
 		}
 	};
 
-	class heap_allocator : public allocator {
-	public:
-		constexpr heap_allocator() {}
-		inline void deallocate(void* aData) override { operator delete(aData); }
+	class heap_allocator {
+	private:
+		void* mData;
+		size_t mSize;
 
-		inline void* allocate(size_t aSize) override {
-			void* const tmp = operator new(aSize);
-			if (tmp == nullptr) throw std::runtime_error("solaire::heap_allocator::allocate : Failed to allocate memory");
+		heap_allocator(const heap_allocator&) = delete;
+		heap_allocator& operator=(const heap_allocator&) = delete;
+	public:
+		inline void* get() const { return mData; }
+		inline size_t size() const { return mSize; }
+
+		constexpr heap_allocator() : 
+			mData(nullptr), 
+			mSize(0) 
+		{}
+		
+		heap_allocator(heap_allocator&& aOther) : 
+			mData(aOther.mData), 
+			mSize(aOther.mSize) 
+		{ 
+			aOther.mData = nullptr; 
+			aOther.mSize = 0; 
+		}
+
+		~heap_allocator() {
+			if (mData) deallocate(*this);
+		}
+
+		heap_allocator& operator=(heap_allocator&& aOther) {
+			std::swap(mData, aOther.mData);
+			std::swap(mSize, aOther.mSize);
+			return *this;
+		}
+
+		inline static void deallocate(heap_allocator& aData) { 
+			operator delete(aData.mData); 
+		}
+
+		inline static heap_allocator allocate(size_t aSize) {
+			heap_allocator tmp;
+			tmp.mData = operator new(aSize);
+			tmp.mSize = aSize;
+			if(tmp.mData == nullptr) throw std::runtime_error("solaire::heap_allocator::allocate : Failed to allocate memory");
 			return tmp;
 		}
 	};
