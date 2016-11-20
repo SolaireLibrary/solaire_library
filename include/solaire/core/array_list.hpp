@@ -31,38 +31,34 @@ namespace solaire {
 		friend class array_list;
 	private:
 		ALLOCATOR mAllocator;
-		T* mData;
 		I mSize;
-		I mCapacity;
 	public:
 		constexpr size_t size() const { return static_cast<size_t>(mSize); }
-		constexpr size_t capacity() const { return static_cast<size_t>(mCapacity); }
+		constexpr size_t capacity() const { return static_cast<size_t>(mAllocator.size() / sizeof(T)); }
 		inline void clear() { mSize = 0; }
-		inline T& operator[](const size_t aIndex) { return mData[aIndex]; }
-		constexpr const T& operator[](const size_t aIndex) const { return mData[aIndex]; }
-		inline T& back() { return mData[mSize - 1]; }
-		constexpr const T& back() const { return mData[mSize - 1]; }
-		inline T& front() { return mData[mSize - 1]; }
-		constexpr const T& front() const { return mData[mSize - 1]; }
+		inline T& operator[](const size_t aIndex) { return static_cast<T*>(mAllocator.get())[aIndex]; }
+		constexpr const T& operator[](const size_t aIndex) const { return static_cast<T*>(mAllocator.get())[aIndex]; }
+		inline T& back() { return static_cast<T*>(mAllocator.get())[mSize - 1]; }
+		constexpr const T& back() const { return static_cast<T*>(mAllocator.get())[mSize - 1]; }
+		inline T& front() { return static_cast<T*>(mAllocator.get())[mSize - 1]; }
+		constexpr const T& front() const { return static_cast<T*>(mAllocator.get())[mSize - 1]; }
 		inline void pop_back() { mSize = mSize == 0 : 0 : mSize - 1; }
-		inline iterator begin() { return mData; }
-		constexpr const_iterator begin() const { return mData; }
-		inline iterator end() { return mData + mSize; }
-		constexpr const_iterator end() const { return mData + mSize; }
-		inline void reserve(size_t aSize) const { if(aSize > mCapacity) resize(aSize); }
+		inline iterator begin() { return static_cast<T*>(mAllocator.get()); }
+		constexpr const_iterator begin() const { return static_cast<T*>(mAllocator.get()); }
+		inline iterator end() { return static_cast<T*>(mAllocator.get()) + mSize; }
+		constexpr const_iterator end() const { return static_cast<T*>(mAllocator.get()) + mSize; }
+		inline void reserve(size_t aSize) const { if(aSize > capacity()) resize(aSize); }
 		inline void pop_front() { erase(begin()); }
 		inline T& push_front(const T& aValue) { return *insert(begin(), aValue); }
 
 		constexpr array_list() :
-			mData(nullptr), 
-			mSize(0), 
-			mCapacity(0) 
+			mAllocator(),
+			mSize(0)
 		{}
 
 		constexpr array_list(size_t aCapacity) :
-			mData(nullptr),
-			mSize(0),
-			mCapacity(0)
+			mAllocator(),
+			mSize(0)
 		{
 			resize(aCapacity);
 		}
@@ -70,92 +66,91 @@ namespace solaire {
 
 		template<class I2 = I, class ALLOCATOR2 = ALLOCATOR, I2 DEFAULT_ALLOCATION2 = DEFAULT_ALLOCATION>
 		array_list(const array_list<T, I2, ALLOCATOR2, DEFAULT_ALLOCATION2>& aOther) :
-			mData(nullptr),
-			mSize(0),
-			mCapacity(0)
+			mAllocator(),
+			mSize(0)
 		{
 			const size_t s = aOther.size();
-			mData = static_cast<T*>(mAllocator.allocate(aCapacity * sizeof(T)));
+			mAllocator.allocate(s * sizeof(T));
 			mSize = s;
-			mCapacity = s;
-			for(size_t i = 0; i < s; ++i) new(mData + i) T(aOther[i]);
+			T* const ptr = static_cast<T*>(mAllocator.get());
+			for(size_t i = 0; i < s; ++i) new(ptr + i) T(aOther[i]);
 		}
 
 		template<class I2 = I, I2 DEFAULT_ALLOCATION2 = DEFAULT_ALLOCATION, class ENABLE = typename std::enable_if<std::is_move_constructible<ALLOCATOR>::value>::type>
 		array_list(array_list<T, I2, ALLOCATOR, DEFAULT_ALLOCATION2>&& aOther) :
-			mAllocator(std::move(aOther.mAllocator)),
-			mData(aOther.mData),
-			mSize(aOther.mSize),
-			mCapacity(aOther.mCapacity)
+			mAllocator(),
+			mSize(aOther.mSize)
 		{
-			aOther.mData = nullptr;
+			std::swap(mAllocator, aOther.mAllocator);
 			aOther.mSize = 0;
-			aOther.mCapacity = 0;
 		}
 
 		~array_list() {
-			if(mData) {
-				for(I i = 0; i < mCapacity; ++i) mData[i].~T();
-				mAllocator.deallocate(mData);
+			if(mAllocator.size() != 0) {
+				T* const ptr = static_cast<T*>(mAllocator.get());
+				for(I i = 0; i < capacity(); ++i) ptr[i].~T();
+				mAllocator.deallocate();
 				mSize = 0;
-				mCapacity = 0;
-				mData = nullptr;
 			}
 		}
 
 		template<class I2 = I, class ALLOCATOR2 = ALLOCATOR, I2 DEFAULT_ALLOCATION2 = DEFAULT_ALLOCATION>
 		array_list<T,I,ALLOCATOR,DEFAULT_ALLOCATION>& operator=(const array_list<T, I2, ALLOCATOR2, DEFAULT_ALLOCATION2>& aOther) {
-			clear();
-			const size_t s - aOther.size();
+			const size_t s = aOther.size();
 			reserve(s);
-			for(size_t i = 0; i < s; ++i) mData[i] = aOther[i];
 			mSize = s;
+			T* const ptr = static_cast<T*>(mAllocator.get());
+			for(size_t i = 0; i < s; ++i) ptr[i] = aOther[i];
 			return *this;
 		}
-
 
 		template<class I2 = I, I2 DEFAULT_ALLOCATION2 = DEFAULT_ALLOCATION, class ENABLE = typename std::enable_if<std::is_move_assignable<ALLOCATOR>::value>::type>
 		array_list<T, I, ALLOCATOR, DEFAULT_ALLOCATION>& operator=(const array_list<T, I2, ALLOCATOR, DEFAULT_ALLOCATION2>& aOther) {
 			std::swap(mAllocator, aOther.mAllocator);
-			std::swap(mData, aOther.mData);
 			size_t tmp = mSize;
 			mSize = aOther.mSize;
 			aOther.mSize = tmp;
-			tmp = mCapacity;
-			mCapacity = aOther.mCapacity;
-			aOther.mCapacity = tmp;
 			return *this;
 		}
 
 		inline T& push_back(const T& aValue) {
-			if(mSize == mCapacity) resize(mCapacity == 0 ? DEFAULT_ALLOCATION : mCapacity * 2);
-			return mData[mSize++] = aValue;
+			if(mSize == capacity()) resize(capacity() == 0 ? DEFAULT_ALLOCATION : capacity() * 2);
+			return static_cast<T*>(mAllocator.get())[mSize++] = aValue;
 		}
 
 		iterator erase(const const_iterator aPosition) {
-			const size_t offset = aPosition - mData;
+			const size_t offset = aPosition - static_cast<T*>(mAllocator.get());
 			--mSize;
-			for(size_t i = offset; i < mSize; ++i) mData[i] = std::move(mData[i + 1]);
-			return mData + offset;
+			for(size_t i = offset; i < mSize; ++i) static_cast<T*>(mAllocator.get())[i] = std::move(static_cast<T*>(mAllocator.get())[i + 1]);
+			return static_cast<T*>(mAllocator.get()) + offset;
 		}
 
 		iterator insert(const const_iterator aPosition, const T& aValue) {
-			const size_t offset = aPosition - mData;
-			if(mSize == mCapacity) resize(mCapacity == 0 ? DEFAULT_ALLOCATION : mCapacity * 2);
-			for(size_t i = mSize; i > offset; --i) mData[i] = std::move(mData[i-1]);
-			mData[offset] = aValue;
+			const size_t offset = aPosition - static_cast<T*>(mAllocator.get());
+			if(mSize == capacity()) resize(capacity() == 0 ? DEFAULT_ALLOCATION : capacity() * 2);
+			for(size_t i = mSize; i > offset; --i) static_cast<T*>(mAllocator.get())[i] = std::move(static_cast<T*>(mAllocator.get())[i-1]);
+			static_cast<T*>(mAllocator.get())[offset] = aValue;
 			++mSize;
-			return mData + offset;
+			return static_cast<T*>(mAllocator.get()) + offset;
 		}
 	private:
-		void resize(const I aCapacity) {
-			T* const tmp = static_cast<T*>(mAllocator.allocate(aCapacity * sizeof(T)));
-			for(I i = 0; i < mSize; ++i) new(tmp + i) T(std::move(mData[i]));
-			for(I i = mSize; i < aCapacity; ++i) new(tmp + i) T();
-			for(I i = 0; i < mCapacity; ++i) mData[i].~T();
-			if(mData) mAllocator.deallocate(mData);
-			mData = tmp;
-			mCapacity = aCapacity;
+		template<class A = ALLOCATOR>
+		typename std::enable_if<std::is_move_assignable<A>::value, void>::type resize(const I aCapacity) {
+			if(aCapacity <= capacity()) return;
+			ALLOCATOR tmp;
+			tmp.allocate(aCapacity * sizeof(T));
+			T* const oldPtr = static_cast<T*>(mAllocator.get());
+			T* const newPtr = static_cast<T*>(tmp.get());
+			for(I i = 0; i < mSize; ++i) new(newPtr + i) T(std::move(oldPtr[i]));
+			for(I i = mSize; i < aCapacity; ++i) new(newPtr + i) T();
+			for(I i = 0; i < capacity(); ++i) oldPtr[i].~T();
+			std::swap(mAllocator, tmp);
+			tmp.deallocate();
+		}
+
+		template<class A = ALLOCATOR>
+		typename std::enable_if<! std::is_move_assignable<A>::value, void>::type resize(const I aCapacity) {
+			if(aCapacity > capacity()) throw std::runtime_error("solaire::array_list::resize : New size exeeds capacity");
 		}
 	};
 
