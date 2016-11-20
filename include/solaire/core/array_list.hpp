@@ -50,7 +50,7 @@ namespace solaire {
 		inline void pop_front() { erase(begin()); }
 		inline T& push_front(const T& aValue) { return *insert(begin(), aValue); }
 
-		//! \todo move constructor / assignment
+		//! \todo move assignment
 
 		constexpr array_list() :
 			mData(nullptr), 
@@ -67,8 +67,8 @@ namespace solaire {
 		}
 
 
-		template<class T2, class I2, class ALLOCATOR2, I DEFAULT_ALLOCATION2>
-		array_list(const array_list<T2, I2, ALLOCATOR2, DEFAULT_ALLOCATION2>& aOther) :
+		template<class I2 = I, class ALLOCATOR2 = ALLOCATOR, I2 DEFAULT_ALLOCATION2 = DEFAULT_ALLOCATION>
+		array_list(const array_list<T, I2, ALLOCATOR2, DEFAULT_ALLOCATION2>& aOther) :
 			mData(nullptr),
 			mSize(0),
 			mCapacity(0)
@@ -78,6 +78,18 @@ namespace solaire {
 			mSize = s;
 			mCapacity = s;
 			for(size_t i = 0; i < s; ++i) new(mData + i) T(aOther[i]);
+		}
+
+		template<class I2 = I, I2 DEFAULT_ALLOCATION2 = DEFAULT_ALLOCATION, class ENABLE = typename std::enable_if<std::is_move_constructible<ALLOCATOR>::value>::type>
+		array_list(array_list<T, I2, ALLOCATOR, DEFAULT_ALLOCATION2>&& aOther) :
+			mAllocator(std::move(aOther.mAllocator)),
+			mData(aOther.mData),
+			mSize(aOther.mSize),
+			mCapacity(aOther.mCapacity)
+		{
+			aOther.mData = nullptr;
+			aOther.mSize = 0;
+			aOther.mCapacity = 0;
 		}
 
 		~array_list() {
@@ -90,8 +102,8 @@ namespace solaire {
 			}
 		}
 
-		template<class T2, class I2, class ALLOCATOR2, I DEFAULT_ALLOCATION2>
-		array_list<T,I,ALLOCATOR,DEFAULT_ALLOCATION>& operator=(const array_list<T2, I2, ALLOCATOR2, DEFAULT_ALLOCATION2>& aOther) {
+		template<class I2 = I, class ALLOCATOR2 = ALLOCATOR, I2 DEFAULT_ALLOCATION2 = DEFAULT_ALLOCATION>
+		array_list<T,I,ALLOCATOR,DEFAULT_ALLOCATION>& operator=(const array_list<T, I2, ALLOCATOR2, DEFAULT_ALLOCATION2>& aOther) {
 			clear();
 			const size_t s - aOther.size();
 			reserve(s);
