@@ -50,7 +50,6 @@ namespace solaire {
 
 		//! \todo move constructor
 		//! \todo copy / move assignment
-		//! \todo push_front
 		//! \todo Erase / insert
 
 		constexpr array_list() :
@@ -94,6 +93,13 @@ namespace solaire {
 		inline T& push_back(const T& aValue) {
 			if(mSize == mCapacity) resize(mCapacity == 0 ? DEFAULT_ALLOCATION : mCapacity * 2);
 			return mData[mSize++] = aValue;
+		}
+
+		T& push_front(const T& aValue) {
+			if(mSize == mCapacity) resize(mCapacity == 0 ? DEFAULT_ALLOCATION : mCapacity * 2);
+			for(size_t i = 0; i < mSize; ++i) mData[mSize - i] = mData[mSize - (i + 1)];
+			++mSize;
+			return mData[0] = aValue;
 		}
 	private:
 		void resize(const I aCapacity) {
