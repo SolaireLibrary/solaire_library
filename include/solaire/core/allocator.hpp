@@ -21,7 +21,7 @@ namespace solaire {
 	class allocator {
 	public:
 		virtual ~allocator() {}
-		virtual void* allocator allocate(size_t) = 0;
+		virtual void* allocate(size_t) = 0;
 		virtual void deallocate() = 0;
 		virtual void* get() const = 0;
 		virtual size_t size() const = 0;
@@ -65,7 +65,7 @@ namespace solaire {
 		}
 	};
 
-	class heap_allocator {
+	class heap_allocator : public allocator {
 	private:
 		void* mData;
 		size_t mSize;
@@ -98,11 +98,11 @@ namespace solaire {
 
 		inline void deallocate() override { 
 			operator delete(mData); 
-			aData.mData = nullptr;
-			aData.mSize = 0;
+			mData = nullptr;
+			mSize = 0;
 		}
 
-		inline heap_allocator allocate(size_t aSize) override {
+		inline void* allocate(size_t aSize) override {
 			if(mData) throw std::runtime_error("solaire::static_allocator::allocate : Cannot allocate to an already allocated allocator");
 			mData = operator new(aSize);
 			mSize = aSize;
