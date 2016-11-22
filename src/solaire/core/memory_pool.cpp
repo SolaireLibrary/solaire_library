@@ -148,4 +148,49 @@ namespace solaire {
 		return mSize;
 	}
 
+	// memory_pool_allocator
+
+	static memory_pool STATIC_POOL;
+
+	static_memory_pool_allocator::static_memory_pool_allocator() :
+		mData(nullptr),
+		mSize(0)
+	{}
+
+	static_memory_pool_allocator::static_memory_pool_allocator(static_memory_pool_allocator&& aOther) :
+		mData(aOther.mData),
+		mSize(aOther.mSize)
+	{}
+
+	static_memory_pool_allocator::~static_memory_pool_allocator() {
+		if(mData) deallocate();
+	}
+
+	static_memory_pool_allocator& static_memory_pool_allocator::operator=(static_memory_pool_allocator&& aOther) {
+		std::swap(mData, aOther.mData);
+		std::swap(mSize, aOther.mSize);
+		return *this;
+	}
+
+	void static_memory_pool_allocator::deallocate() {
+		if(!mData) throw std::runtime_error("solaire::memory_pool_allocator::deallocate : Not allocated");
+		STATIC_POOL.deallocate(mData);
+		mData = nullptr;
+		mData = 0;
+	}
+
+	void* static_memory_pool_allocator::allocate(size_t aSize) {
+		if(mData) throw std::runtime_error("solaire::memory_pool_allocator::allocate : Already allocated");
+		mData = STATIC_POOL.allocate(aSize);
+		mSize = aSize;
+	}
+
+	void* static_memory_pool_allocator::get() const {
+		return mData;
+	}
+
+	size_t static_memory_pool_allocator::size() const {
+		return mSize;
+	}
+
 }

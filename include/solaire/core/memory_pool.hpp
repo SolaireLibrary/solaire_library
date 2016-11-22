@@ -60,6 +60,26 @@ namespace solaire {
 		void* get() const override;
 		size_t size() const override;
 	};
+
+	class static_memory_pool_allocator : public allocator {
+	private:
+		void* mData;
+		size_t mSize;
+
+		static_memory_pool_allocator(const static_memory_pool_allocator&) = delete;
+		static_memory_pool_allocator& operator=(const static_memory_pool_allocator&) = delete;
+	public:
+		static_memory_pool_allocator();
+		static_memory_pool_allocator(static_memory_pool_allocator&&);
+		~static_memory_pool_allocator();
+		static_memory_pool_allocator& operator=(static_memory_pool_allocator&&);
+
+		// Inherited from allocator
+		void deallocate() override;
+		void* allocate(size_t) override;
+		void* get() const override;
+		size_t size() const override;
+	};
 }
 
 #endif
