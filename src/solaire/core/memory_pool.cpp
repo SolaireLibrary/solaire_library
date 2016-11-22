@@ -44,9 +44,13 @@ namespace solaire {
 		// Check for an open block
 		const auto end = mOpenBlocks.end();
 		for(auto i = mOpenBlocks.begin(); i != end; ++i) if(i->second <= aSize) {
-			//! \todo Split block if it is too large
-			const block tmp = *i;
+			block tmp = *i;
 			mOpenBlocks.erase(i);
+			if(tmp.second > aSize) {
+				const size_t dif = tmp.second - aSize;
+				tmp.second -= dif;
+				mClosedBlocks.push_back({static_cast<uint8_t*>(tmp.first) + tmp.second, dif });
+			}
 			mClosedBlocks.push_back(tmp);
 			return tmp.first;
 		}
