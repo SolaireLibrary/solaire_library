@@ -54,7 +54,7 @@ namespace solaire {
 
 		// Inherited from allocator
 		void deallocate() override;
-		void* allocate(size_t aSize) override;
+		void* allocate(size_t) override;
 		void* get() const override;
 		size_t size() const override;
 	};
