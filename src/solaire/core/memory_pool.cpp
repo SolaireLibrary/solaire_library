@@ -16,6 +16,61 @@
 
 namespace solaire {
 
+	// memory_pool
+
+	memory_pool::memory_pool() {
+
+	}
+
+	memory_pool::memory_pool(memory_pool&& aOther) {
+		operator=(std::move(aOther));
+	}
+
+	memory_pool::~memory_pool() {
+		mOpenBlocks.clear();
+		mClosedBlocks.clear();
+		for(const block& i : mRealBlocks) operator delete(i.first);
+		mRealBlocks.clear();
+	}
+
+	memory_pool& memory_pool::operator=(memory_pool&& aOther) {
+		std::swap(mRealBlocks, aOther.mRealBlocks);
+		std::swap(mOpenBlocks, aOther.mOpenBlocks);
+		std::swap(mClosedBlocks, aOther.mClosedBlocks);
+		return *this;
+	}
+
+	void* memory_pool::allocate(size_t aSize) {
+		// Check for an open block
+		const auto end = mOpenBlocks.end();
+		for(auto i = mOpenBlocks.begin(); i != end; ++i) if(i->second <= aSize) {
+			//! \todo Split block if it is too large
+			const block tmp = *i;
+			mOpenBlocks.erase(i);
+			mClosedBlocks.push_back(tmp);
+			return tmp.first;
+		}
+
+		// Allocate a new block
+		const block tmp(operator new(aSize), aSize);
+		if(! tmp.first) throw std::runtime_error("solaire::memory_pool::allocate : Failed to allocate memory");
+		mRealBlocks.push_back(tmp);
+		mClosedBlocks.push_back(tmp);
+		return tmp.first;
+	}
+
+	void memory_pool::deallocate(void* aData) {
+		// Check for closed block
+		const auto end = mOpenBlocks.end();
+		//! \todo Merge blocks
+		for(auto i = mOpenBlocks.begin(); i != end; ++i) if(i->first == aData) {
+			const block tmp = *i;
+			mClosedBlocks.erase(i);
+			mOpenBlocks.push_back(tmp);
+			return;
+		}
+		throw std::runtime_error("solaire::memory_pool::deallocate : Memory not allocated from this allocator");
+	}
 
 	// memory_pool_allocator
 
