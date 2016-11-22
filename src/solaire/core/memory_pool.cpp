@@ -65,14 +65,29 @@ namespace solaire {
 
 	void memory_pool::deallocate(void* aData) {
 		// Check for closed block
-		const auto end = mOpenBlocks.end();
-		//! \todo Merge blocks
-		for(auto i = mOpenBlocks.begin(); i != end; ++i) if(i->first == aData) {
-			const block tmp = *i;
-			mClosedBlocks.erase(i);
-			mOpenBlocks.push_back(tmp);
-			return;
+		auto end = mClosedBlocks.end();
+		for(auto i = mClosedBlocks.begin(); i != end; ++i) {
+			if(i->first == aData) {
+				const block tmp = *i;
+				mClosedBlocks.erase(i);
+				end = mOpenBlocks.end();
+				// Check for block that follows this one
+				const void* const next = static_cast<uint8_t*>(tmp.first) + tmp.second;
+				for(i = mOpenBlocks.begin(); i != end; ++i)if (i->first == next) {
+					i->first = tmp.first;
+					i->second += tmp.second;
+					return;
+				}
+				// Check for block that precedes this one
+				for(i = mOpenBlocks.begin(); i != end; ++i) if(static_cast<uint8_t*>(i->first) + i->second == tmp.first) {
+					i->second += tmp.second;
+					return;
+				}
+				mOpenBlocks.push_back(tmp);
+				return;
+			}
 		}
+		
 		throw std::runtime_error("solaire::memory_pool::deallocate : Memory not allocated from this allocator");
 	}
 
