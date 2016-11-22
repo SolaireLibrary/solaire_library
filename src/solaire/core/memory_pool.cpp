@@ -46,11 +46,13 @@ namespace solaire {
 		for(auto i = mOpenBlocks.begin(); i != end; ++i) if(i->second <= aSize) {
 			block tmp = *i;
 			mOpenBlocks.erase(i);
+			#ifndef SOLAIRE_DISABLE_MEMORY_POOL_SPLIT
 			if(tmp.second > aSize) {
 				const size_t dif = tmp.second - aSize;
 				tmp.second -= dif;
 				mClosedBlocks.push_back({static_cast<uint8_t*>(tmp.first) + tmp.second, dif });
 			}
+			#endif
 			mClosedBlocks.push_back(tmp);
 			return tmp.first;
 		}
@@ -70,6 +72,7 @@ namespace solaire {
 			if(i->first == aData) {
 				const block tmp = *i;
 				mClosedBlocks.erase(i);
+				#ifndef SOLAIRE_DISABLE_MEMORY_POOL_MERGE
 				end = mOpenBlocks.end();
 				// Check for block that follows this one
 				const void* const next = static_cast<uint8_t*>(tmp.first) + tmp.second;
@@ -83,6 +86,7 @@ namespace solaire {
 					i->second += tmp.second;
 					return;
 				}
+				#endif
 				mOpenBlocks.push_back(tmp);
 				return;
 			}
