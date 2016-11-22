@@ -16,6 +16,8 @@
 //limitations under the License.
 
 #include <cstdint>
+#include <vector>
+#include "allocator.hpp"
 
 namespace solaire {
 	class memory_pool {
@@ -34,7 +36,7 @@ namespace solaire {
 		memory_pool& operator=(memory_pool&&);
 
 		void* allocate(size_t);
-		void deallocate();
+		void deallocate(void*);
 	};
 
 	class memory_pool_allocator : public allocator {
