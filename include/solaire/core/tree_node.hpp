@@ -16,6 +16,7 @@
 //limitations under the License.
 
 #include <cstdint>
+#include "array_list.hpp"
 
 namespace solaire {
 	template<class T, uint8_t CHILDREN>
@@ -95,6 +96,20 @@ namespace solaire {
 		if(aFn(aNode.value)) return true;
 		for(size_t i = 0; i < s; ++i) {
 			if(depth_first(aFn, aNode[i])) return true;
+		}
+		return false;
+	}
+
+	template<class F, class N>
+	bool breadth_first(const F& aFn, N& aNode) {
+		heap_array_list<N*> openList;
+		openList.push_back(&aNode);
+		while(openList.size() > 0) {
+			N* const n = openList.front();
+			openList.pop_front();
+			if(aFn(n->value)) return true;
+			const size_t s = n->children();
+			for(size_t i = 0; i < s; ++i) openList.push_back(&n->operator[](i));
 		}
 		return false;
 	}
