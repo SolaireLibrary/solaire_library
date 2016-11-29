@@ -88,6 +88,16 @@ namespace solaire {
 			return aChild;
 		}
 	};
+
+	template<class F, class N>
+	bool depth_first(const F& aFn, N& aNode) {
+		const size_t s = aNode.children();
+		if(aFn(aNode.value)) return true;
+		for(size_t i = 0; i < s; ++i) {
+			if(depth_first(aFn, aNode[i])) return true;
+		}
+		return false;
+	}
 }
 
 #endif
