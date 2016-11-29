@@ -42,7 +42,7 @@ namespace solaire {
 		constexpr const T& back() const { return static_cast<T*>(mAllocator.get())[mSize - 1]; }
 		inline T& front() { return static_cast<T*>(mAllocator.get())[mSize - 1]; }
 		constexpr const T& front() const { return static_cast<T*>(mAllocator.get())[mSize - 1]; }
-		inline void pop_back() { mSize = mSize == 0 : 0 : mSize - 1; }
+		inline void pop_back() { mSize = mSize == 0 ? 0 : mSize - 1; }
 		inline iterator begin() { return static_cast<T*>(mAllocator.get()); }
 		constexpr const_iterator begin() const { return static_cast<T*>(mAllocator.get()); }
 		inline iterator end() { return static_cast<T*>(mAllocator.get()) + mSize; }
